@@ -1,0 +1,39 @@
+{
+  "name": "btc-pki",
+  "version": "1.0.0",
+  "description": "Use Bitcoin keys to create provably secure x509 public key infrastructure certificates",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DigitalArsenal/btc-pki.git"
+  },
+  "keywords": [
+    "Bitcoin",
+    "BTC",
+    "Public",
+    "Key",
+    "Infrastructure",
+    "PKI",
+    "x509",
+    "certificates",
+    "certificate",
+    "authority"
+  ],
+  "author": "digitalarsenal.io, inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DigitalArsenal/btc-pki/issues"
+  },
+  "homepage": "https://github.com/DigitalArsenal/btc-pki#readme",
+  "dependencies": {
+    "@peculiar/x509": "^1.3.2",
+    "base64url": "^3.0.1",
+    "bitcoinjs-lib": "^5.2.0",
+    "buffer": "^6.0.3",
+    "webcrypto-liner": "^1.2.4",
+    "wif": "^2.0.6"
+  }
+}
