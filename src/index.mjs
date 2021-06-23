@@ -7,7 +7,8 @@ import * as x509 from '@peculiar/x509';
 import base64URL from "base64url";
 import { writeFileSync } from 'fs';
 import inquirer from 'inquirer';
-
+import { of } from "rxjs";
+import bip39 from 'bip39';
 
 
 x509.cryptoProvider.set(linerCrypto);
@@ -35,22 +36,22 @@ async function main() {
             name: 'pin',
             message: "Pin?"
         }
-    ]);
+    ]).catch((error) => {
+        console.log(error);
+        if (error.isTtyError) {
+          // Prompt couldn't be rendered in the current environment
+        } else {
+          // Something else went wrong
+        }
+      });
 
    
     let {username, password, pin } = answers;
     pin = parseInt(pin);
-    console.log(username, password, pin);
-    /*.then((answers) => {
-      console.log(answers)
-    })
-    .catch((error) => {
-      if (error.isTtyError) {
-        // Prompt couldn't be rendered in the current environment
-      } else {
-        // Something else went wrong
-      }
-    });*/
+    if(isNaN(pin)){
+        throw Error('Pin Invalid');
+        return;
+    }
   
   const jwkConversion = (prvHex, pubHex, namedCurve) => ({
       kty: "EC",
@@ -61,7 +62,11 @@ async function main() {
   });
     let pK = pbkdf2Sync(username, password, 1, 32, "sha256", 0);
     const privateKeyHex = pK.toString("hex");
-
+    
+    const mem = bip39.entropyToMnemonic(pK);
+    console.log(mem);
+    console.log(pK);
+    console.log(Buffer.from(bip39.mnemonicToEntropy(mem), 'hex'));
     const bjsKeyPair = bitcoinjs.ECPair.fromWIF(wif.encode(128, pK, true));
 
     const { address } = bitcoinjs.payments.p2pkh({
@@ -105,7 +110,7 @@ async function main() {
 
         ]
     });
-
+    await x509.X509Certificate.digitalSignature
     let exportedCAKey = await subtle.exportKey("pkcs8", caKeys.privateKey);
 
 
@@ -149,5 +154,6 @@ async function main() {
     });
     console.log(serverCert.toString('pem'));
 }
+
 
 main();
