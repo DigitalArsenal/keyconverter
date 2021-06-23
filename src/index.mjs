@@ -9,7 +9,19 @@ import { writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import { of } from "rxjs";
 import bip39 from 'bip39';
+import sshpk from 'sshpk';
 
+globalThis.btoa = globalThis.btoa || function (str) {
+    var buffer;
+
+    if (str instanceof Buffer) {
+        buffer = str;
+    } else {
+        buffer = Buffer.from(str.toString(), 'binary');
+    }
+
+    return buffer.toString('base64');
+};
 
 x509.cryptoProvider.set(linerCrypto);
 
@@ -19,50 +31,50 @@ let { subtle } = linerCrypto;
 let keyLength = 32;
 
 async function main() {
-  let answers = await inquirer
-    .prompt([
-        {
-            type: 'input',
-            name: 'username',
-            message: "Username?",
-        },
-        {
-            type: 'password',
-            name: 'password',
-            message: "Password?",
-        },
-        {
-            type: 'input',
-            name: 'pin',
-            message: "Pin?"
-        }
-    ]).catch((error) => {
-        console.log(error);
-        if (error.isTtyError) {
-          // Prompt couldn't be rendered in the current environment
-        } else {
-          // Something else went wrong
-        }
-      });
+    let answers = await inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'username',
+                message: "Username?",
+            },
+            {
+                type: 'password',
+                name: 'password',
+                message: "Password?",
+            },
+            {
+                type: 'input',
+                name: 'pin',
+                message: "Pin?"
+            }
+        ]).catch((error) => {
+            console.log(error);
+            if (error.isTtyError) {
+                // Prompt couldn't be rendered in the current environment
+            } else {
+                // Something else went wrong
+            }
+        });
 
-   
-    let {username, password, pin } = answers;
+
+    let { username, password, pin } = answers;
     pin = parseInt(pin);
-    if(isNaN(pin)){
+    if (isNaN(pin)) {
         throw Error('Pin Invalid');
         return;
     }
-  
-  const jwkConversion = (prvHex, pubHex, namedCurve) => ({
-      kty: "EC",
-      crv: namedCurve,
-      d: base64URL.encode(prvHex, "hex"),
-      x: null,
-      y: null,
-  });
+
+    const jwkConversion = (prvHex, pubHex, namedCurve) => ({
+        kty: "EC",
+        crv: namedCurve,
+        d: base64URL.encode(prvHex, "hex"),
+        x: null,
+        y: null,
+    });
     let pK = pbkdf2Sync(username, password, 1, 32, "sha256", 0);
     const privateKeyHex = pK.toString("hex");
-    
+
     const mem = bip39.entropyToMnemonic(pK);
     console.log(mem);
     console.log(pK);
@@ -92,7 +104,21 @@ async function main() {
         privateKey: await subtle.importKey("jwk", keyExt, { name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]),
         publicKey: await subtle.importKey("jwk", pubKeyExt, { name: "ECDSA", namedCurve: "P-256" }, true, ["verify"]),
     };
+    const publicKey = await subtle.exportKey('spki', caKeys.publicKey);
 
+    let pkBody = btoa(String.fromCharCode(...new Uint8Array(publicKey))).match(/.{1,64}/g).join('\n');
+    pkBody = `-----BEGIN PUBLIC KEY-----\n${pkBody}\n-----END PUBLIC KEY-----`;
+    console.log('public key: ', pkBody);
+    /* Read in a PEM public key */
+    let sshkey = sshpk.parseKey(pkBody, 'pem');
+
+    /* Convert to PEM PKCS#8 public key format */
+    var pemBuf = sshkey.toBuffer('pkcs8');
+
+    /* Convert to SSH public key format (and return as a string) */
+    var sshKey = sshkey.toString('ssh');
+
+    console.log(sshKey, pemBuf);
     let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
 
     const caCert = await x509.X509CertificateGenerator.createSelfSigned({
@@ -118,7 +144,7 @@ async function main() {
         exportedCAKey,
         "private key"
     ));
-    
+
     console.log(caCert.toString("pem"));
 
     let SAN = new x509.SubjectAlternativeNameExtension({
