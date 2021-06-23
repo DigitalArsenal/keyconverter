@@ -6,27 +6,60 @@ import { pbkdf2Sync } from 'crypto';
 import * as x509 from '@peculiar/x509';
 import base64URL from "base64url";
 import { writeFileSync } from 'fs';
+import inquirer from 'inquirer';
 
-export const clean = new RegExp(/[:\n\s\r]{1,}/g);
 
-const jwkConversion = (prvHex, pubHex, namedCurve) => ({
-    kty: "EC",
-    crv: namedCurve,
-    d: base64URL.encode(prvHex, "hex"),
-    x: null,
-    y: null,
-});
 
 x509.cryptoProvider.set(linerCrypto);
 
 let { subtle } = linerCrypto;
 
 
-let password = "password", salt = "salt", pin = 1, keyLength = 32;
+let keyLength = 32;
 
 async function main() {
+  let answers = await inquirer
+    .prompt([
+        {
+            type: 'input',
+            name: 'username',
+            message: "Username?",
+        },
+        {
+            type: 'password',
+            name: 'password',
+            message: "Password?",
+        },
+        {
+            type: 'input',
+            name: 'pin',
+            message: "Pin?"
+        }
+    ]);
 
-    let pK = pbkdf2Sync(password, salt, 1, 32, "sha256", 0);
+   
+    let {username, password, pin } = answers;
+    pin = parseInt(pin);
+    console.log(username, password, pin);
+    /*.then((answers) => {
+      console.log(answers)
+    })
+    .catch((error) => {
+      if (error.isTtyError) {
+        // Prompt couldn't be rendered in the current environment
+      } else {
+        // Something else went wrong
+      }
+    });*/
+  
+  const jwkConversion = (prvHex, pubHex, namedCurve) => ({
+      kty: "EC",
+      crv: namedCurve,
+      d: base64URL.encode(prvHex, "hex"),
+      x: null,
+      y: null,
+  });
+    let pK = pbkdf2Sync(username, password, 1, 32, "sha256", 0);
     const privateKeyHex = pK.toString("hex");
 
     const bjsKeyPair = bitcoinjs.ECPair.fromWIF(wif.encode(128, pK, true));
