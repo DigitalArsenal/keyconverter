@@ -8,8 +8,9 @@ export class keymaster {
         return ""
     }
     constructor(privateKey: Buffer);
+    constructor(privateKey: string, format: string);
     constructor(bip39: string);
-    constructor(bip39: string);
+    constructor(login: string, pass: string, pin: Number);
     constructor(privateKey?: any, y?: any) {
         this.privateKey = privateKey;
     }

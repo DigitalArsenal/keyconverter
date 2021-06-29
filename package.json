@@ -5,7 +5,7 @@
   "main": "index.mjs",
   "scripts": {
     "test": "mocha -s 300",
-    "test:dev": "env DEV=true mocha -s 300 -w --watch-files ./src/**/*,./test/**.* --parallel  ./test"
+    "test:dev": "env DEV=true mocha -s 300 -w --watch-files ./src/**/*,./test/**.*"
   },
   "repository": {
     "type": "git",
