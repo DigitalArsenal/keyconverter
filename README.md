@@ -1,4 +1,4 @@
-# gen-certs
+# bit-certs
 
 # TODO
 

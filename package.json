@@ -1,14 +1,15 @@
 {
-  "name": "btc-pki",
+  "name": "bit-certs",
   "version": "1.0.0",
   "description": "Use Bitcoin keys to create provably secure x509 public key infrastructure certificates",
   "main": "index.mjs",
   "scripts": {
-    "test": "test"
+    "test": "mocha -s 300",
+    "test:dev": "env DEV=true mocha -s 300 -w --watch-files ./src/**/*,./test/**.* --parallel  ./test"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DigitalArsenal/btc-pki.git"
+    "url": "git+https://github.com/DigitalArsenal/bit-certs.git"
   },
   "keywords": [
     "Bitcoin",
@@ -25,9 +26,21 @@
   "author": "digitalarsenal.io, inc.",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DigitalArsenal/btc-pki/issues"
+    "url": "https://github.com/DigitalArsenal/bit-certs/issues"
   },
-  "homepage": "https://github.com/DigitalArsenal/btc-pki#readme",
+  "mocha": {
+    "require": [
+      "ts-node/register"
+    ],
+    "extension": [
+      "ts"
+    ],
+    "timeout": 5000,
+    "spec": [
+      "test/**"
+    ]
+  },
+  "homepage": "https://github.com/DigitalArsenal/bit-certs#readme",
   "dependencies": {
     "@peculiar/x509": "^1.3.2",
     "base64url": "^3.0.1",
@@ -38,5 +51,11 @@
     "sshpk": "^1.16.1",
     "webcrypto-liner": "^1.2.4",
     "wif": "^2.0.6"
+  },
+  "devDependencies": {
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^10.12.18",
+    "mocha": "^9.0.1",
+    "ts-node": "^10.0.0"
   }
 }
