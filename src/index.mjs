@@ -31,34 +31,9 @@ let { subtle } = linerCrypto;
 let keyLength = 32;
 
 async function main() {
-    let answers = await inquirer
-        .prompt([
-            {
-                type: 'input',
-                name: 'username',
-                message: "Username?",
-            },
-            {
-                type: 'password',
-                name: 'password',
-                message: "Password?",
-            },
-            {
-                type: 'input',
-                name: 'pin',
-                message: "Pin?"
-            }
-        ]).catch((error) => {
-            console.log(error);
-            if (error.isTtyError) {
-                // Prompt couldn't be rendered in the current environment
-            } else {
-                // Something else went wrong
-            }
-        });
 
 
-    let { username, password, pin } = answers;
+    let username = "Test", password = "Test", pin = 1;
     pin = parseInt(pin);
     if (isNaN(pin)) {
         throw Error('Pin Invalid');
@@ -76,15 +51,11 @@ async function main() {
     const privateKeyHex = pK.toString("hex");
 
     const mem = bip39.entropyToMnemonic(pK);
-    console.log(mem);
-    console.log(pK);
-    console.log(Buffer.from(bip39.mnemonicToEntropy(mem), 'hex'));
     const bjsKeyPair = bitcoinjs.ECPair.fromWIF(wif.encode(128, pK, true));
 
     const { address } = bitcoinjs.payments.p2pkh({
         pubkey: bjsKeyPair.publicKey,
     });
-    console.log(address);
 
     const namedCurve = "P-256";
     const keys = await subtle.importKey("jwk", jwkConversion(privateKeyHex, null, namedCurve), { name: "ECDSA", namedCurve }, true, ["sign", "verify"]);
@@ -104,8 +75,50 @@ async function main() {
         privateKey: await subtle.importKey("jwk", keyExt, { name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]),
         publicKey: await subtle.importKey("jwk", pubKeyExt, { name: "ECDSA", namedCurve: "P-256" }, true, ["verify"]),
     };
-    const publicKey = await subtle.exportKey('spki', caKeys.publicKey);
+    const publicKey = await subtle.exportKey('jwk', caKeys.publicKey);
+    const bufferPrivateKey = await subtle.exportKey("jwk", keys);
 
+    const publicKeyHex = caKeys.publicKey;
+    const privateKeyHex1 = Buffer.from(await subtle.exportKey("raw", keys), 'hex').toString('hex');
+
+    const hexToUintArray = hex => {
+        const a = [];
+        for (let i = 0, len = hex.length; i < len; i += 2) {
+            a.push(parseInt(hex.substr(i, 2), 16));
+        }
+        return new Uint8Array(a);
+    }
+
+    const hexToArrayBuf = hex => {
+        return hexToUintArray(hex).buffer;
+    }
+
+    const jwkConv = (prvHex, pubHex) => ({
+        kty: "EC",
+        crv: "P-256",
+        d: base64URL.encode(hexToArrayBuf(prvHex)),
+        x: null,//base64URL.encode(hexToArrayBuf(pubHex).slice(1, 33)),
+        y: null//base64URL.encode(hexToArrayBuf(pubHex).slice(33, 66))
+    });
+
+    const importedPrivateKey = await subtle.importKey(
+        'jwk',
+        jwkConversion(privateKeyHex, null, namedCurve),
+        {
+            name: 'ECDH',
+            namedCurve
+        },
+        true,
+        ['sign']
+    );
+
+    let exportedPK = (await subtle.exportKey("jwk", keys)).d;
+    console.log(pK,
+        Buffer.from(pK).toString('hex'),
+        exportedPK,
+        jwkConversion(privateKeyHex, null, namedCurve),
+        Buffer.from(base64URL.decode('Bo6RXNMtm1pBKOKinkFNR7piuRzJAjVMY-JhKlY3QGQ', 'hex'), 'hex'));
+    return;
     let pkBody = btoa(String.fromCharCode(...new Uint8Array(publicKey))).match(/.{1,64}/g).join('\n');
     pkBody = `-----BEGIN PUBLIC KEY-----\n${pkBody}\n-----END PUBLIC KEY-----`;
     console.log('public key: ', pkBody);
