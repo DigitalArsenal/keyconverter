@@ -7,5 +7,5 @@
     },
     "include": [
         "./src/**/*"
-    ]
+, "scratch/index.mjs"    ]
 }
