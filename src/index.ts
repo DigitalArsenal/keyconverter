@@ -8,6 +8,8 @@ import { writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import { of } from "rxjs";
 import sshpk from 'sshpk';
+import * as bip39 from 'bip39';
+
 
 let { subtle } = linerCrypto;
 
@@ -44,18 +46,26 @@ export class keymaster {
     get bip39(): string {
         return ""
     }
-
     init(privateKey: Buffer);
-    init(bip39: string);
-    init(privateKey: string, format: string);
+    init(privateKey: string, format?: BufferEncoding);
 
-    public async init(privateKey: any, format?: string): Promise<void> {
-        if (privateKey instanceof Buffer) {
+    public async init(privateKey: any, format?: BufferEncoding): Promise<void> {
+
+        let convert: Boolean = false;
+
+        if (typeof privateKey === "string" && privateKey.indexOf(' ') > -1) {
+            privateKey = bip39.mnemonicToEntropy(privateKey);
+            convert = true;
+
+        } else if (privateKey instanceof Buffer) {
+            convert = true;
+        }
+
+        if (convert) {
             format = "hex";
             privateKey = privateKey.toString("hex");
-        } else if (privateKey instanceof String && !format) {
-            privateKey = privateKey.toString()
         }
+
         this.privateKey = await subtle.importKey(
             "jwk",
             keymaster.jwkConversion(privateKey, this.curve, format),

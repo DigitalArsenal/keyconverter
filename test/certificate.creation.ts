@@ -10,6 +10,8 @@ let curves = {
 
 it("creates a certificate from a buffer", async function () {
     let km = new keymaster('K-256');
-    await km.init(pbkdf2Sync('Test', 'Test', 1, 32, "sha256"));
+    await km.init(Buffer.from(
+        new Array(33).join("0"),
+        'hex'));
     console.log(km);
 });

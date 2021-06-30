@@ -49,8 +49,12 @@ async function main() {
     });
     let pK = pbkdf2Sync(username, password, 1, 32, "sha256", 0);
     const privateKeyHex = pK.toString("hex");
-
-    const mem = bip39.entropyToMnemonic(pK);
+    console.log(privateKeyHex)
+    const mem = bip39.entropyToMnemonic(
+        Buffer.from(
+            new Array(33).join("0"),
+            'hex'));
+    console.log(mem);
     const bjsKeyPair = bitcoinjs.ECPair.fromWIF(wif.encode(128, pK, true));
 
     const { address } = bitcoinjs.payments.p2pkh({
