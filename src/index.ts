@@ -29,7 +29,7 @@ export class keymaster {
     unwrapKey: The key may be used to unwrap a key.
     */
 
-    keyUsages: Array<string> = ["sign", "verify"];
+    keyUsages: Array<string>;
 
     private static jwkConversion(prvHex: string, namedCurve: NamedCurve, format: string = "hex"): JsonWebKey {
         return {
@@ -53,6 +53,8 @@ export class keymaster {
         if (privateKey instanceof Buffer) {
             format = "hex";
             privateKey = privateKey.toString("hex");
+        } else if (privateKey instanceof String && !format) {
+            privateKey = privateKey.toString()
         }
         this.privateKey = await subtle.importKey(
             "jwk",
@@ -62,8 +64,9 @@ export class keymaster {
             this.keyUsages);
     }
 
-    constructor(namedCurve: NamedCurve) {
+    constructor(namedCurve: NamedCurve, keyUsages?: Array<string>) {
         this.curve = namedCurve;
+        this.keyUsages = keyUsages || ["sign", "verify"];
     }
 }
 
