@@ -5,7 +5,8 @@
   "main": "index.mjs",
   "scripts": {
     "test": "mocha -s 300",
-    "test:dev": "env DEV=true mocha -s 300 -w --watch-files ./src/**/*,./test/**.*"
+    "test:dev": "env DEV=true mocha -s 300 -w --watch-files ./src/**/*,./test/**.*",
+    "build:types": "tsc -p tsconfig.json --outDir build/types --declaration --emitDeclarationOnly"
   },
   "repository": {
     "type": "git",
@@ -54,7 +55,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
-    "@types/node": "^10.12.18",
+    "@types/node": "^15.12.5",
     "argon2": "^0.28.2",
     "mocha": "^9.0.1",
     "ts-node": "^10.0.0"

@@ -31,11 +31,11 @@ export class keymaster {
 
     keyUsages: Array<string> = ["sign", "verify"];
 
-    private static jwkConversion(prvHex: string, namedCurve: NamedCurve): JsonWebKey {
+    private static jwkConversion(prvHex: string, namedCurve: NamedCurve, format: string = "hex"): JsonWebKey {
         return {
             kty: "EC",
             crv: namedCurve,
-            d: base64URL.encode(prvHex, "hex"),
+            d: base64URL.encode(prvHex, format),
             x: null,
             y: null,
         }
@@ -50,9 +50,13 @@ export class keymaster {
     init(privateKey: string, format: string);
 
     public async init(privateKey: any, format?: string): Promise<void> {
+        if (privateKey instanceof Buffer) {
+            format = "hex";
+            privateKey = privateKey.toString("hex");
+        }
         this.privateKey = await subtle.importKey(
             "jwk",
-            keymaster.jwkConversion(privateKey.toString('hex'), this.curve),
+            keymaster.jwkConversion(privateKey, this.curve, format),
             { name: "ECDSA", namedCurve: this.curve },
             true,
             this.keyUsages);
