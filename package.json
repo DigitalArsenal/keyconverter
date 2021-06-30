@@ -43,6 +43,7 @@
   "homepage": "https://github.com/DigitalArsenal/bit-certs#readme",
   "dependencies": {
     "@peculiar/x509": "^1.3.2",
+    "argon2": "^0.28.2",
     "base64url": "^3.0.1",
     "bip39": "^3.0.4",
     "bitcoinjs-lib": "^5.2.0",

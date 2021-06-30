@@ -113,11 +113,7 @@ async function main() {
     );
 
     let exportedPK = (await subtle.exportKey("jwk", keys)).d;
-    console.log(pK,
-        Buffer.from(pK).toString('hex'),
-        exportedPK,
-        jwkConversion(privateKeyHex, null, namedCurve),
-        Buffer.from(base64URL.decode('Bo6RXNMtm1pBKOKinkFNR7piuRzJAjVMY-JhKlY3QGQ', 'hex'), 'hex'));
+    console.log(jwkConversion(privateKeyHex, null, namedCurve));
     return;
     let pkBody = btoa(String.fromCharCode(...new Uint8Array(publicKey))).match(/.{1,64}/g).join('\n');
     pkBody = `-----BEGIN PUBLIC KEY-----\n${pkBody}\n-----END PUBLIC KEY-----`;
