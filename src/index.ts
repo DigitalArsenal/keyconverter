@@ -13,12 +13,13 @@ import * as bip39 from 'bip39';
 
 let { subtle } = linerCrypto;
 
+type HexKey = string;
+
 export class keymaster {
 
     privateKey: CryptoKey;
     publicKey: CryptoKey;
     curve: NamedCurve;
-
 
     /*
     encrypt: The key may be used to encrypt messages.
@@ -33,6 +34,12 @@ export class keymaster {
 
     keyUsages: Array<string>;
 
+    /**
+     * Converts hex format to an RFC7517 JSONWebKey
+     * @link https://datatracker.ietf.org/doc/html/rfc7517
+     * @param 
+     * @returns {Number} Returns the value of x for the equation.
+     */
     private static jwkConversion(prvHex: string, namedCurve: NamedCurve, format: string = "hex"): JsonWebKey {
         return {
             kty: "EC",
