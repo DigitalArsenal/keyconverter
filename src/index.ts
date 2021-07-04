@@ -1,4 +1,4 @@
-import base64URL from 'base64-url';
+import base64URL from 'base64-url/index.js';
 import { crypto as linerCrypto } from 'webcrypto-liner/build/index.js';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import wif from 'wif';
@@ -7,6 +7,8 @@ import * as x509 from '@peculiar/x509';
 import { of } from 'rxjs';
 import sshpk from 'sshpk';
 import * as bip39 from 'bip39';
+
+x509.cryptoProvider.set(linerCrypto);
 
 let { subtle } = linerCrypto;
 
@@ -50,9 +52,15 @@ export class keymaster {
     };
   }
 
-  get bip39(): string {
-    return '';
+  async bip39(): Promise<string> {
+    return bip39.entropyToMnemonic(Buffer.from(await this.hex(), "hex"));
   }
+
+  async hex(): Promise<string> {
+    let jwkPrivateKey = await subtle.exportKey("jwk", this.privateKey);
+    return base64URL.decode(jwkPrivateKey.d, 'hex');
+  }
+
   init(privateKey: Buffer);
   init(privateKey: string, format?: EncodingOptions);
 

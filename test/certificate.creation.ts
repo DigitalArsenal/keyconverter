@@ -1,4 +1,4 @@
-import * as assert from "assert";
+import assert from "assert";
 import { keymaster } from "../src/index";
 import { pbkdf2Sync, scryptSync } from 'crypto';
 import * as argon2 from "argon2";
@@ -9,9 +9,11 @@ let curves = {
 }
 
 it("creates a certificate from a buffer", async function () {
-    let km = new keymaster('K-256');
+    let km = new keymaster(curves.secp256k1);
+    let privateKeyHex = new Array(64).join("0")+"1";
     await km.init(Buffer.from(
-        new Array(33).join("0"),
+        privateKeyHex,
         'hex'));
-    console.log(km);
+    assert.strictEqual((await km.hex()), privateKeyHex);
+    assert.strictEqual(await km.bip39(), `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`);
 });

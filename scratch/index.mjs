@@ -58,7 +58,7 @@ async function main() {
     pubkey: bjsKeyPair.publicKey,
   });
 
-  const namedCurve = "P-256";
+  const namedCurve = "K-256";
   const keys = await subtle.importKey("jwk", jwkConversion(privateKeyHex, null, namedCurve), { name: "ECDSA", namedCurve }, true, ["sign", "verify"]);
 
   const keyExt = await subtle.exportKey("jwk", keys);
@@ -78,7 +78,7 @@ async function main() {
   };
   const publicKey = await subtle.exportKey("jwk", caKeys.publicKey);
   const bufferPrivateKey = await subtle.exportKey("jwk", keys);
-
+  console.log(keys);
   const publicKeyHex = caKeys.publicKey;
   const privateKeyHex1 = Buffer.from(await subtle.exportKey("raw", keys), "hex").toString("hex");
 
@@ -114,7 +114,7 @@ async function main() {
   );
 
   let exportedPK = (await subtle.exportKey("jwk", keys)).d;
-  console.log(exportedPK);
+  console.log(keys, exportedPK);
   console.log(base64URL.decode(exportedPK, "hex") === privateKeyHex);
 
   return;
