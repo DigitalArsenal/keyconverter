@@ -15,7 +15,7 @@ it("creates a certificate from a buffer", async function () {
         privateKeyHex,
         'hex');
     let bip39 = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
-    await km.init(privateKeyHexBuffer);
+    await km.import(privateKeyHexBuffer);
     assert.strictEqual((await km.hex()), privateKeyHex);
     assert.strictEqual(await km.bip39(), bip39);
 });

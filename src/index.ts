@@ -61,10 +61,10 @@ export class keymaster {
     return base64URL.decode(jwkPrivateKey.d, 'hex');
   }
 
-  init(privateKey: Buffer);
-  init(privateKey: string, format?: EncodingOptions);
+  import(privateKey: Buffer);
+  import(privateKey: string, format?: EncodingOptions);
 
-  public async init(privateKey: any, format?: EncodingOptions): Promise<void> {
+  public async import(privateKey: any, format?: EncodingOptions): Promise<void> {
 
     let convert: Boolean = false;
 
