@@ -36,7 +36,7 @@ export class keymaster {
    * Converts hex format to an RFC7517 JSONWebKey
    * @link https://datatracker.ietf.org/doc/html/rfc7517
    * @param
-   * @returns {Number} Returns the value of x for the equation.
+   * @returns {JsonWebKey}
    */
   private static jwkConversion(
     prvHex: string,
