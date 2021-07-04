@@ -12,7 +12,7 @@ x509.cryptoProvider.set(linerCrypto);
 
 let { subtle } = linerCrypto;
 
-type EncodingOptions = BufferEncoding | 'wif';
+type EncodingOptions = BufferEncoding | 'wif' | 'bip39';
 
 export class keymaster {
   privateKey: CryptoKey;
@@ -52,6 +52,9 @@ export class keymaster {
     };
   }
 
+  async export(): Promise<string|Buffer>{
+    return Buffer.from('a');
+  }
   async bip39(): Promise<string> {
     return bip39.entropyToMnemonic(Buffer.from(await this.hex(), "hex"));
   }
