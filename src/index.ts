@@ -1,21 +1,21 @@
-import base64URL from 'base64url'
-import { crypto as linerCrypto } from 'webcrypto-liner/build/index.js'
-import * as bitcoinjs from 'bitcoinjs-lib'
-import wif from 'wif'
-import { pbkdf2Sync } from 'crypto'
-import * as x509 from '@peculiar/x509'
-import { of } from 'rxjs'
-import sshpk from 'sshpk'
-import * as bip39 from 'bip39'
+import base64URL from 'base64-url';
+import { crypto as linerCrypto } from 'webcrypto-liner/build/index.js';
+import * as bitcoinjs from 'bitcoinjs-lib';
+import wif from 'wif';
+import { pbkdf2Sync } from 'crypto';
+import * as x509 from '@peculiar/x509';
+import { of } from 'rxjs';
+import sshpk from 'sshpk';
+import * as bip39 from 'bip39';
 
-let { subtle } = linerCrypto
+let { subtle } = linerCrypto;
 
 type EncodingOptions = BufferEncoding | 'wif';
 
 export class keymaster {
-  privateKey: CryptoKey
-  publicKey: CryptoKey
-  curve: NamedCurve
+  privateKey: CryptoKey;
+  publicKey: CryptoKey;
+  curve: NamedCurve;
 
   /*
     encrypt: The key may be used to encrypt messages.
@@ -28,7 +28,7 @@ export class keymaster {
     unwrapKey: The key may be used to unwrap a key.
     */
 
-  keyUsages: Array<string>
+  keyUsages: Array<string>;
 
   /**
    * Converts hex format to an RFC7517 JSONWebKey
@@ -36,7 +36,7 @@ export class keymaster {
    * @param
    * @returns {Number} Returns the value of x for the equation.
    */
-  private static jwkConversion (
+  private static jwkConversion(
     prvHex: string,
     namedCurve: NamedCurve,
     format: string = 'hex'
@@ -47,28 +47,29 @@ export class keymaster {
       d: base64URL.encode(prvHex, format),
       x: null,
       y: null
-    }
+    };
   }
 
-  get bip39 (): string {
-    return ''
+  get bip39(): string {
+    return '';
   }
-  init (privateKey: Buffer)
-  init (privateKey: string, format?: EncodingOptions)
+  init(privateKey: Buffer);
+  init(privateKey: string, format?: EncodingOptions);
 
-  public async init (privateKey: any, format?: EncodingOptions): Promise<void> {
-    let convert: Boolean = false
+  public async init(privateKey: any, format?: EncodingOptions): Promise<void> {
+
+    let convert: Boolean = false;
 
     if (typeof privateKey === 'string' && privateKey.indexOf(' ') > -1) {
-      privateKey = bip39.mnemonicToEntropy(privateKey)
-      convert = true
+      privateKey = bip39.mnemonicToEntropy(privateKey);
+      convert = true;
     } else if (privateKey instanceof Buffer) {
-      convert = true
+      convert = true;
     }
 
     if (convert) {
-      format = 'hex'
-      privateKey = privateKey.toString('hex')
+      format = 'hex';
+      privateKey = privateKey.toString('hex');
     }
 
     this.privateKey = await subtle.importKey(
@@ -77,11 +78,11 @@ export class keymaster {
       { name: 'ECDSA', namedCurve: this.curve },
       true,
       this.keyUsages
-    )
+    );
   }
 
-  constructor (namedCurve: NamedCurve, keyUsages?: Array<string>) {
-    this.curve = namedCurve
-    this.keyUsages = keyUsages || ['sign', 'verify']
+  constructor(namedCurve: NamedCurve, keyUsages?: Array<string>) {
+    this.curve = namedCurve;
+    this.keyUsages = keyUsages || ['sign', 'verify'];
   }
 }
