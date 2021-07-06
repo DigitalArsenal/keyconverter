@@ -52,17 +52,26 @@ export class keymaster {
     };
   }
 
-  async export(): Promise<string|Buffer>{
-    return Buffer.from('a');
-  }
-  async bip39(): Promise<string> {
-    return bip39.entropyToMnemonic(Buffer.from(await this.hex(), "hex"));
+  async toString(encoding: EncodingOptions): Promise<string> {
+    if (encoding === "bip39") {
+      return bip39.entropyToMnemonic(Buffer.from(await this.hex(), "hex"));
+    } else {
+
+    }
   }
 
+  async bip32(): Object {
+    await km.import(bip39mnemonic);
+    const seed = await bip39.mnemonicToSeed(bip39mnemonic);
+    const node = bip32.fromSeed(seed);
+    console.log(node.toBase58());
+  }
+  
   async hex(): Promise<string> {
     let jwkPrivateKey = await subtle.exportKey("jwk", this.privateKey);
     return base64URL.decode(jwkPrivateKey.d, 'hex');
   }
+
 
   import(privateKey: Buffer);
   import(privateKey: string, format?: EncodingOptions);

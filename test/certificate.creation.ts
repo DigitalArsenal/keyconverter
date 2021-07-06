@@ -19,8 +19,12 @@ it("creates a certificate from a buffer", async function () {
     let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
     await km.import(bip39mnemonic);
     const seed = await bip39.mnemonicToSeed(bip39mnemonic);
+    let hh = await km.hex();
+    console.log(bip39.mnemonicToEntropy(bip39mnemonic), bip39.entropyToMnemonic(hh));
     const node = bip32.fromSeed(seed);
     console.log(node.toBase58());
+    const child = (node.derivePath('m/0/0'));
+    console.log(child)
 
     assert.strictEqual((await km.hex()), privateKeyHex);
     assert.strictEqual(await km.bip39(), bip39mnemonic);
