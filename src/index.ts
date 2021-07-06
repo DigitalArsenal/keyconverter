@@ -60,13 +60,13 @@ export class keymaster {
     }
   }
 
-  async bip32(): Object {
+  async bip32output(): Object {
     await km.import(bip39mnemonic);
     const seed = await bip39.mnemonicToSeed(bip39mnemonic);
     const node = bip32.fromSeed(seed);
     console.log(node.toBase58());
   }
-  
+
   async hex(): Promise<string> {
     let jwkPrivateKey = await subtle.exportKey("jwk", this.privateKey);
     return base64URL.decode(jwkPrivateKey.d, 'hex');
