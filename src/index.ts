@@ -71,6 +71,7 @@ export class keymaster {
         let jwkPrivateKey = await subtle.exportKey("jwk", this.privateKey);
         return base64URL.decode(jwkPrivateKey.d, 'hex');
     }
+
     async publicKeyHex(): Promise<string> {
         let keyExt = await subtle.exportKey("jwk", this.privateKey);
         let { d, ...pubKeyExt } = keyExt;
@@ -86,14 +87,22 @@ export class keymaster {
 
         let convert: Boolean = false;
 
-        if (typeof privateKey === "string" && (privateKey.indexOf(" ") > -1 || encoding === "bip39")) {
-            privateKey = bip39.mnemonicToEntropy(privateKey);
-            convert = true;
-        } if (encoding === "wif") {
-            const decodedWif = wif.decode(privateKey);
-            privateKey = keymaster.toHex(decodedWif.privateKey);
+        if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
             encoding = "hex";
+        }
 
+        if (typeof privateKey === "string") {
+            if (privateKey.indexOf(" ") > -1 || encoding === "bip39") {
+                privateKey = bip39.mnemonicToEntropy(privateKey);
+                convert = true;
+            } else if (encoding === "wif") {
+                const decodedWif = wif.decode(privateKey);
+                privateKey = keymaster.toHex(decodedWif.privateKey);
+                encoding = "hex";
+
+            } else if (!encoding) {
+                throw Error(`Unknown Private Key Encoding: ${encoding}`);
+            }
         } else if (privateKey instanceof Buffer) {
             convert = true;
         }
