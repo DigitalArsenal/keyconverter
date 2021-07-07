@@ -10,7 +10,7 @@ let curves = {
     secp256r1: 'P-256',
 };
 
-let km = new keymaster(curves.secp256k1);
+let km = new keymaster(curves.secp256k1, ["encrypt"]);
 
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
 let privateKeyHex = new Array(64).join("0") + "1";
