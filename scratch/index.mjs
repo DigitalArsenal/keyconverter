@@ -117,7 +117,7 @@ async function main() {
   console.log(keys, exportedPK);
   console.log(base64URL.decode(exportedPK, "hex") === privateKeyHex);
 
-  return;
+
   let pkBody = btoa(String.fromCharCode(...new Uint8Array(publicKey)))
     .match(/.{1,64}/g)
     .join("\n");

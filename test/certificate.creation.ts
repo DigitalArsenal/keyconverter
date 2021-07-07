@@ -12,20 +12,14 @@ let curves = {
 
 it("creates a certificate from a buffer", async function () {
     let km = new keymaster(curves.secp256k1);
-    let privateKeyHex = new Array(64).join("0") + "1";
-    let privateKeyHexBuffer = Buffer.from(
-        privateKeyHex,
-        'hex');
     let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
+    let privateKeyHex = new Array(64).join("0") + "1";
+    let privateKeyWIF = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
+    let publicKeyHex = "0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8";
     await km.import(bip39mnemonic);
-    const seed = await bip39.mnemonicToSeed(bip39mnemonic);
-    let hh = await km.hex();
-    console.log(bip39.mnemonicToEntropy(bip39mnemonic), bip39.entropyToMnemonic(hh));
-    const node = bip32.fromSeed(seed);
-    console.log(node.toBase58());
-    const child = (node.derivePath('m/0/0'));
-    console.log(child)
-
-    assert.strictEqual((await km.hex()), privateKeyHex);
-    assert.strictEqual(await km.bip39(), bip39mnemonic);
+    assert.strictEqual(await km.privateKeyHex(), privateKeyHex);
+    await km.import(privateKeyWIF, 'wif');
+    assert.strictEqual(await km.publicKeyHex(), publicKeyHex);
+    assert.strictEqual(await km.export('bip39'), bip39mnemonic);
+    assert.strictEqual(await km.export('wif'), privateKeyWIF);
 });
