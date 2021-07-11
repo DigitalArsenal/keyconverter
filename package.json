@@ -1,37 +1,44 @@
 {
-  "name": "karma-typescript-monorepo",
-  "description": "Monorepo for karma-typescript packages",
-  "private": true,
+  "name": "karma-typescript-examples-mocha",
+  "version": "5.5.1",
+  "description": "",
   "author": "monounity",
+  "contributors": [
+    {
+      "name": "erikbarke"
+    }
+  ],
+  "private": true,
   "license": "MIT",
   "scripts": {
-    "setup": "npm run setup:packages && npm run setup:examples && npm run setup:integration-tests",
-    "setup:packages": "npm install && lerna bootstrap --hoist --no-ci",
-    "setup:examples": "cd examples/angular2 && npm i && cd ../.. && cd examples/typescript-1.6.2 && npm i && cd ../.. && cd examples/typescript-1.8.10 && npm i && cd ../.. && cd examples/typescript-latest && npm i && cd ../..",
-    "setup:integration-tests": "cd tests/integration-latest && npm i && cd ../..",
-    "build": "lerna run build",
-    "lint": "lerna run lint",
-    "test": "lerna run test",
-    "test:examples": "npm run test:examples:angular && npm run test:examples:typescript-1.6.2 && npm run test:examples:typescript-1.8.10 && npm run test:examples:typescript-latest",
-    "test:examples:angular": "npm --prefix examples/angular2/ test",
-    "test:examples:typescript-1.6.2": "npm --prefix examples/typescript-1.6.2/ test",
-    "test:examples:typescript-1.8.10": "npm --prefix examples/typescript-1.8.10/ test",
-    "test:examples:typescript-latest": "npm --prefix examples/typescript-latest/ test",
-    "test:integration": "npm --prefix tests/integration-latest/ test",
-    "ci": "npm run lint && npm run build && node ci-install.js && npm run test && npm run test:examples && npm run test:integration"
-  },
-  "dependencies": {
-    "fs-extra": "^9.0.1",
-    "lerna": "^3.22.1"
-  },
-  "collective": {
-    "type": "opencollective",
-    "url": "https://opencollective.com/karma-typescript",
-    "logo": "https://opencollective.com/opencollective/logo.txt"
+    "test": "karma start",
+    "build:types": "tsc -p tsconfig.json --outDir build/types --declaration --emitDeclarationOnly"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.1.0",
-    "@typescript-eslint/parser": "^4.1.0",
-    "eslint": "^7.8.1"
+    "@types/base64-url": "^2.2.0",
+    "@types/expect.js": "^0.3.29",
+    "@types/mocha": "^5.2.5",
+    "@types/sshpk": "^1.10.6",
+    "@types/wif": "^2.0.2",
+    "expect.js": "^0.3.1",
+    "karma": "^6.1.0",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-cli": "^2.0.0",
+    "karma-mocha": "^1.3.0",
+    "karma-typescript": "latest",
+    "mocha": "^6.2.0",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "@peculiar/x509": "^1.3.2",
+    "base64-url": "^2.3.3",
+    "bip32": "^2.0.6",
+    "bip39": "^3.0.4",
+    "bitcoinjs-lib": "^5.2.0",
+    "buffer": "^6.0.3",
+    "inquirer": "^8.1.1",
+    "sshpk": "^1.16.1",
+    "webcrypto-liner": "^1.2.4",
+    "wif": "^2.0.6"
   }
 }

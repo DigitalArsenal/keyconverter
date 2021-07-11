@@ -1,8 +1,0 @@
-{
-  "main": "index.js",
-  "module": "esm/index.js",
-  "name": "karma-typescript-test-module",
-  "private": true,
-  "sideEffects": false,
-  "typings": "./typings.d.ts"
-}
