@@ -31,12 +31,12 @@ declare type EncodingOptions = BufferEncoding | "wif" | "bip39" | "jwk" | "x509"
 declare type KeyUsageOptions = "encrypt" | "decrypt" | "sign" | "verify" | "deriveKey" | "deriveBits" | "wrapKey" | "unwrapKey";
 declare type NamedCurve = {
     name: string;
-    namedCurve: string;
+    curve: string;
 };
 export declare class keyconvert {
     privateKey: CryptoKey;
     publicKey: CryptoKey;
-    curve: NamedCurve;
+    namedCurve: NamedCurve;
     keyUsages: Array<KeyUsageOptions>;
     /**
      * Converts hex format to an RFC7517 JSONWebKey

@@ -51,7 +51,7 @@ type NamedCurve = {
 export class keyconvert {
     privateKey: CryptoKey;
     publicKey: CryptoKey;
-    curve: NamedCurve;
+    keyCurve: NamedCurve;
 
 
     keyUsages: Array<KeyUsageOptions>;
@@ -101,7 +101,7 @@ export class keyconvert {
     async publicKeyHex(): Promise<string> {
         let keyExt = await subtle.exportKey("jwk", this.privateKey);
         let { d, ...pubKeyExt } = keyExt;
-        this.publicKey = await subtle.importKey("jwk", pubKeyExt, { name: "ECDSA", namedCurve: this.curve }, true, ["verify"])
+        this.publicKey = await subtle.importKey("jwk", pubKeyExt,  this.keyCurve, true, ["verify"])
         let publicKey = await subtle.exportKey("raw", this.publicKey);
         return keyconvert.toHex(publicKey);
     }
@@ -138,20 +138,20 @@ export class keyconvert {
         if (convert) {
             encoding = "hex";
             privateKey = privateKey.toString("hex");
-            importJWK = keyconvert.jwkConversion(privateKey, this.curve, encoding);
+            importJWK = keyconvert.jwkConversion(privateKey, this.keyCurve, encoding);
         }
 
         this.privateKey = await subtle.importKey(
             "jwk",
             importJWK,
-            this.curve,
+            this.keyCurve,
             true,
             this.keyUsages
         );
     }
 
     constructor(namedCurve: NamedCurve, keyUsages?: Array<KeyUsageOptions>) {
-        this.curve = namedCurve;
+        this.keyCurve = namedCurve;
         this.keyUsages = keyUsages || ["sign", "verify", "deriveKey", "deriveBits"];
     }
 }
