@@ -1,0 +1,63 @@
+{
+  "name": "karma-typescript-angular2-transform",
+  "version": "5.5.1",
+  "description": "Plugin for transforming template and style urls in Angular components.",
+  "files": [
+    "dist/**"
+  ],
+  "main": "dist/transform.js",
+  "keywords": [
+    "angular",
+    "karma-typescript",
+    "typescript"
+  ],
+  "author": "monounity",
+  "contributors": [
+    "erikbarke",
+    "cleavera"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/monounity/karma-typescript.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "lint": "eslint . --ext .ts",
+    "test": "nyc --require ts-node/register tape \"src/test/*.spec.ts\" | faucet"
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "exclude": [
+      "**/*.spec.ts"
+    ],
+    "reporter": [
+      "html"
+    ],
+    "tempDir": "./coverage/.nyc_output"
+  },
+  "dependencies": {
+    "acorn": "^8.1.0",
+    "log4js": "^6.3.0",
+    "magic-string": "^0.25.7"
+  },
+  "devDependencies": {
+    "@angular/core": "^10.0.9",
+    "@types/karma": "^6.1.0",
+    "@types/lodash": "^4.14.159",
+    "@types/node": "^14.0.27",
+    "@types/sinon": "^9.0.4",
+    "@types/tape": "^4.13.0",
+    "faucet": "0.0.1",
+    "karma-typescript": "5.5.1",
+    "nyc": "^15.1.0",
+    "rxjs": "^6.6.2",
+    "sinon": "^9.0.3",
+    "tape": "^5.0.1",
+    "ts-node": "^8.10.2",
+    "typescript": "latest",
+    "zone.js": "^0.10.3"
+  }
+}
