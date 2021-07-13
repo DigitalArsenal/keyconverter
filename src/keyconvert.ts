@@ -1,14 +1,15 @@
+
 import base64URL from "base64-url/index.js";
-import "webcrypto-liner";
+import * as liner from "../lib/webcrypto.liner.index.es";
 import wif from "wif";
-import * as x509 from "@peculiar/x509";
+//import * as x509 from "@peculiar/x509";
 import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { EcAlgorithm } from "@peculiar/x509";
-
+import { Buffer } from 'buffer';
 const { crypto: linerCrypto } = liner;
-
-x509.cryptoProvider.set(linerCrypto);
+//console.log(x509)
+//x509.cryptoProvider.set(linerCrypto);
 
 let { subtle } = linerCrypto;
 
@@ -119,7 +120,7 @@ export class keyconvert {
 
         console.log(encoding, encoding as KeyFormat);
         if (encoding as KeyFormat && encoding !== "wif" /*TODO: figure out why this is necessary*/) {
-            this.privateKey = await subtle.importKey(encoding, privateKey, this.algorithm, this.extractable,this.keyUsages);
+            this.privateKey = await subtle.importKey(encoding, privateKey, this.algorithm, this.extractable, this.keyUsages);
             return;
         }
 
