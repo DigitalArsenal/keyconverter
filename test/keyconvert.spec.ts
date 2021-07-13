@@ -58,6 +58,5 @@ it("Imports Private Key as hex string", async function () {
 
 it("Imports Private Key as JsonWebKey", async function () {
     await km.import(jsonWebKey);
-    console.log(await km.export("jwk"))
     await runAssertions();
 });

@@ -118,7 +118,6 @@ export class keyconvert {
         let convert: Boolean = true;
         let importJWK: JsonWebKey;
 
-        console.log(encoding, encoding as KeyFormat);
         if (encoding as KeyFormat && encoding !== "wif" /*TODO: figure out why this is necessary*/) {
             this.privateKey = await subtle.importKey(encoding, privateKey, this.algorithm, this.extractable, this.keyUsages);
             return;
