@@ -1,2 +1,2 @@
-import { expect, assert } from 'chai';
+const { expect, assert } =require('chai');
 Object.assign(globalThis, { expect, assert });

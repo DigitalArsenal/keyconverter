@@ -40,8 +40,8 @@
   "scripts": {
     "test:browser": "karma start",
     "build:types": "tsc -p tsconfig.json --outDir build/types --declaration --emitDeclarationOnly",
-    "test": "mocha -s 300 --require ./test/scripts/chai-setup.mjs",
-    "test:dev": "env DEV=true mocha -s 300 -w --watch-files ./src/**/*,./test/**.*"
+    "test": "mocha -s 300 --require ./test/scripts/chai-setup.js",
+    "test:dev": "env DEV=true mocha -s 300 --require ./test/scripts/chai-setup.js -w --watch-files ./src/**/*,./test/**.*"
   },
   "devDependencies": {
     "@babel/plugin-transform-spread": "^7.14.6",
