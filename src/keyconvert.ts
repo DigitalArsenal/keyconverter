@@ -2,14 +2,14 @@
 import base64URL from "base64-url/index.js";
 import * as liner from "../lib/webcrypto.liner.index.es";
 import wif from "wif";
-//import * as x509 from "@peculiar/x509";
+import * as x509 from "../lib/x509.es";
 import sshpk from "sshpk";
 import * as bip39 from "bip39";
-import { EcAlgorithm } from "@peculiar/x509";
+import { EcAlgorithm } from "../lib/x509.es";
 import { Buffer } from 'buffer';
 const { crypto: linerCrypto } = liner;
-//console.log(x509)
-//x509.cryptoProvider.set(linerCrypto);
+
+x509.cryptoProvider.set(linerCrypto);
 
 let { subtle } = linerCrypto;
 

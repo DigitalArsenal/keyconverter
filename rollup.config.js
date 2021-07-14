@@ -11,5 +11,5 @@ export default {
     },
     plugins: [typescript({
         "module": "esnext",
-    }), commonjs(), json(), resolve()],
+    }), commonjs(), json(), resolve({ preferBuiltins: true })],
 };
