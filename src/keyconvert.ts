@@ -47,15 +47,10 @@ type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "x
 
 type KeyUsageOptions = "encrypt" | "decrypt" | "sign" | "verify" | "deriveKey" | "deriveBits" | "wrapKey" | "unwrapKey";
 
-type NamedCurve = {
-    name: string;
-    namedCurve: string
-}
-
 export class keyconvert {
     privateKey: CryptoKey;
     publicKey: CryptoKey;
-    keyCurve: NamedCurve;
+    keyCurve: EcKeyGenParams;
     extractable: boolean;
     algorithm: AlgorithmIdentifier;
     keyUsages: Array<KeyUsageOptions>;
@@ -68,7 +63,7 @@ export class keyconvert {
      */
     private static jwkConversion(
         prvHex: string,
-        curve: NamedCurve,
+        curve: EcKeyGenParams,
         format: string = "hex"
     ): JsonWebKey {
         return {
@@ -84,32 +79,45 @@ export class keyconvert {
         return Buffer.from(buffer, "hex").toString("hex");
     }
 
-    async export(encoding: EncodingOptions, type: KeyType): Promise<JsonWebKey | ArrayBuffer | string> {
-        if (type === "private") {
-            const _hex = await this.privateKeyHex();
-            if (encoding === "hex") {
-                return _hex;
-            } else if (encoding === "bip39") {
+    private static exportFormatError(encoding: string, type: KeyType): void {
+        throw Error(`${encoding} format is not available for KeyType ${type}`);
+    }
+
+    async export(encoding: EncodingOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string> {
+
+        const _hex = type === "private" ? await this.privateKeyHex() : await this.publicKeyHex();
+        if (encoding === "hex") {
+            return _hex;
+        } else if (encoding === "bip39") {
+            if (type === "public") {
+                keyconvert.exportFormatError(encoding, type);
+            } else {
                 return bip39.entropyToMnemonic(Buffer.from(_hex, "hex"));
-            } else if (encoding === "wif") {
-                return wif.encode(128, Buffer.from(_hex, "hex"), true);
-            } else if (encoding === "ssh") {
-
-                let pkBody = btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('spki', this.publicKey))))
-                    .match(/.{1,64}/g)
-                    .join("\n");
-                pkBody = `-----BEGIN PUBLIC KEY-----\n${pkBody}\n-----END PUBLIC KEY-----`;
-                console.log("public key: ", pkBody);
-                /* Read in a PEM public key */
-                let sshkey = sshpk.parseKey(pkBody, "pem");
-
-
-            } else if (encoding) {
-                return await subtle.exportKey(encoding, this.privateKey);
             }
-        } else if (type === "public") {
-
+        } else if (encoding === "wif") {
+            if (type === "public") {
+                keyconvert.exportFormatError(encoding, type);
+            } else {
+                return wif.encode(128, Buffer.from(_hex, "hex"), true);
+            }
+        } else if (encoding === "ssh") {
+            let openSSHPEM = `-----BEGIN PRIVATE KEY-----
+${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', this.privateKey))))
+                    .match(/.{1,64}/g)
+                    .join("\n")}
+-----END PRIVATE KEY-----`;
+            if (type === "private") {
+                return openSSHPEM;
+            } else {
+                let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
+                sshkey.comment = comment;
+                return sshkey.toPublic().toString("ssh");
+            }
+            return
+        } else if (encoding) {
+            return await subtle.exportKey(encoding, type === "private" ? this.privateKey : this.publicKey);
         }
+
     }
 
     async privateKeyHex(): Promise<string> {
@@ -133,7 +141,7 @@ export class keyconvert {
         let convert: Boolean = true;
         let importJWK: JsonWebKey;
 
-        if (encoding as KeyFormat && encoding !== "wif" /*TODO: figure out why this is necessary*/) {
+        if (["jwk", "pkcs8", "raw", "spki"].indexOf(encoding) > -1) {
             this.privateKey = await subtle.importKey(encoding, privateKey, this.algorithm, this.extractable, this.keyUsages);
             return;
         }
@@ -174,7 +182,7 @@ export class keyconvert {
         return;
     }
 
-    constructor(namedCurve: NamedCurve, algorithm: AlgorithmIdentifier = EcAlgorithm, extractable: boolean = true, keyUsages?: Array<KeyUsageOptions>) {
+    constructor(namedCurve: EcKeyGenParams, algorithm: AlgorithmIdentifier = EcAlgorithm, extractable: boolean = true, keyUsages?: Array<KeyUsageOptions>) {
         this.keyCurve = namedCurve;
         this.extractable = extractable;
         this.algorithm = algorithm;

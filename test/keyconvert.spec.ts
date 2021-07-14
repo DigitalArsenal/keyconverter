@@ -7,7 +7,7 @@ import * as bip39 from "bip39";
 const curves = {
     secp256k1: { name: "ECDSA", namedCurve: "K-256" },
     secp256r1: { name: "ECDSA", namedCurve: "P-256" },
-    //x25519: { name: "EdDSA", namedCurve: "X25519" }
+    Ed25519: { name: "EdDSA", namedCurve: "Ed25519" }
 };
 
 let curve = curves.secp256r1;
@@ -43,13 +43,13 @@ let jsonWebKey = {
 };
 
 const runAssertions = async () => {
-
     expect(await km.privateKeyHex()).to.be.equal(privateKeyHex);
     expect(await km.publicKeyHex()).to.be.equal(publicKeyHex[curve.namedCurve]);
     expect(await km.export("bip39", "private")).to.be.equal(bip39mnemonic);
     expect(await km.export("wif", "private")).to.be.equal(privateKeyWIF);
     expect(await km.export("jwk", "private")).to.be.eql(jsonWebKey);
     console.log(await km.export("ssh", "private"));
+    console.log(await km.export("ssh", "public", "test"));
 
 }
 
