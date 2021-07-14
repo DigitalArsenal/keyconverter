@@ -9,5 +9,7 @@ export default {
         dir: 'build',
         format: 'esm',
     },
-    plugins: [typescript(), commonjs(), json(), resolve()],
+    plugins: [typescript({
+        "module": "esnext",
+    }), commonjs(), json(), resolve()],
 };
