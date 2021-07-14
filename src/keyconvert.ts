@@ -7,13 +7,13 @@ import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { EcAlgorithm } from "../lib/x509.es";
 import { Buffer } from 'buffer';
-const { crypto: linerCrypto } = liner;
 
-x509.cryptoProvider.set(linerCrypto);
+const { crypto: linerCrypto } = liner;
 
 let { subtle } = linerCrypto;
 
 /**
+
  * @type
  * 
  * @description
@@ -21,7 +21,7 @@ let { subtle } = linerCrypto;
  * 
  */
 
-type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "x509";
+type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "x509";
 
 /**
  * @type
@@ -84,16 +84,31 @@ export class keyconvert {
         return Buffer.from(buffer, "hex").toString("hex");
     }
 
-    async export(encoding: EncodingOptions): Promise<JsonWebKey | ArrayBuffer | string> {
-        const _hex = await this.privateKeyHex();
-        if (encoding === "hex") {
-            return _hex;
-        } else if (encoding === "bip39") {
-            return bip39.entropyToMnemonic(Buffer.from(_hex, "hex"));
-        } else if (encoding === "wif") {
-            return wif.encode(128, Buffer.from(_hex, "hex"), true);
-        } else if (encoding) {
-            return await subtle.exportKey(encoding, this.privateKey);
+    async export(encoding: EncodingOptions, type: KeyType): Promise<JsonWebKey | ArrayBuffer | string> {
+        if (type === "private") {
+            const _hex = await this.privateKeyHex();
+            if (encoding === "hex") {
+                return _hex;
+            } else if (encoding === "bip39") {
+                return bip39.entropyToMnemonic(Buffer.from(_hex, "hex"));
+            } else if (encoding === "wif") {
+                return wif.encode(128, Buffer.from(_hex, "hex"), true);
+            } else if (encoding === "ssh") {
+
+                let pkBody = btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('spki', this.publicKey))))
+                    .match(/.{1,64}/g)
+                    .join("\n");
+                pkBody = `-----BEGIN PUBLIC KEY-----\n${pkBody}\n-----END PUBLIC KEY-----`;
+                console.log("public key: ", pkBody);
+                /* Read in a PEM public key */
+                let sshkey = sshpk.parseKey(pkBody, "pem");
+
+
+            } else if (encoding) {
+                return await subtle.exportKey(encoding, this.privateKey);
+            }
+        } else if (type === "public") {
+
         }
     }
 

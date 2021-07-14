@@ -10,29 +10,47 @@ const curves = {
     //x25519: { name: "EdDSA", namedCurve: "X25519" }
 };
 
-let km = new keyconvert(curves.secp256k1);
+let curve = curves.secp256r1;
+let km = new keyconvert(curve);
 
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
-let privateKeyHex = new Array(64).join("0") + "1"; //"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140";
+let privateKeyHex = new Array(64).join("0") + "1";
 let privateKeyWIF = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
-let publicKeyHex = "0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8";
+
+let publicKeyHex: any = {
+    "K-256": "0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8",
+    "P-256": "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
+}
+
+let jWKPub: any = {
+    "K-256": {
+        x: 'eb5mfvncu6xVoGKVzocLBwKb_NstzijZWfKBWxb4F5g',
+        y: 'SDradyajxGVdpPv8DhEIqP0XtEimhVQZnEfQj_sQ1Lg',
+    },
+    "P-256": {
+        "x": "axfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpY",
+        "y": "T-NC4v4af5uO5-tKfA-eFivOM1drMV7Oy7ZAaDe_UfU"
+    }
+}
+
 let jsonWebKey = {
     d: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE',
-    x: 'eb5mfvncu6xVoGKVzocLBwKb_NstzijZWfKBWxb4F5g',
-    y: 'SDradyajxGVdpPv8DhEIqP0XtEimhVQZnEfQj_sQ1Lg',
+    ...jWKPub[curve.namedCurve],
     ext: true,
     key_ops: ['sign', 'verify', 'deriveKey', 'deriveBits'],
-    crv: 'K-256',
+    crv: curve.namedCurve,
     kty: 'EC'
 };
 
 const runAssertions = async () => {
 
     expect(await km.privateKeyHex()).to.be.equal(privateKeyHex);
-    expect(await km.publicKeyHex()).to.be.equal(publicKeyHex);
-    expect(await km.export("bip39")).to.be.equal(bip39mnemonic);
-    expect(await km.export("wif")).to.be.equal(privateKeyWIF);
-    expect(await km.export("jwk")).to.be.eql(jsonWebKey);
+    expect(await km.publicKeyHex()).to.be.equal(publicKeyHex[curve.namedCurve]);
+    expect(await km.export("bip39", "private")).to.be.equal(bip39mnemonic);
+    expect(await km.export("wif", "private")).to.be.equal(privateKeyWIF);
+    expect(await km.export("jwk", "private")).to.be.eql(jsonWebKey);
+    console.log(await km.export("ssh", "private"));
+
 }
 
 it("Imports Private Key as Mnemonic", async function () {
