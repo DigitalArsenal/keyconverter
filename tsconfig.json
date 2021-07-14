@@ -1,8 +1,8 @@
 {
     "compileOnSave": false,
     "compilerOptions": {
-        "outDir": "./built",
-        "module": "commonjs",
+        "outDir": "./build",
+        "module": "esnext",
         "moduleResolution": "node",
         "noImplicitAny": true,
         "target": "es6",
