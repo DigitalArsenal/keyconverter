@@ -106,10 +106,12 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
                     .match(/.{1,64}/g)
                     .join("\n")}
 -----END PRIVATE KEY-----`;
+            let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
             if (type === "private") {
-                return openSSHPEM;
+                console.log(Object.keys(sshpk), sshpk.generatePrivateKey);
+                return sshkey.toString();
             } else {
-                let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
+
                 sshkey.comment = comment;
                 return sshkey.toPublic().toString("ssh");
             }
