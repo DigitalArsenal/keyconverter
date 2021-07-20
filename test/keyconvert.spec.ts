@@ -1,5 +1,5 @@
 import assert from "assert";
-import { keyconvert } from "../src/keyconvert";
+import { keyconvert, EncodingOptions } from "../src/keyconvert";
 import { pbkdf2Sync, scryptSync } from "crypto";
 import * as bip32 from "bip32";
 import * as bip39 from "bip39";
@@ -42,39 +42,46 @@ let jsonWebKey = {
     kty: 'EC'
 };
 
-const runAssertions = async () => {
+const runAssertions = async (type: EncodingOptions) => {
     expect(await km.privateKeyHex()).to.be.equal(privateKeyHex);
     expect(await km.publicKeyHex()).to.be.equal(publicKeyHex[curve.namedCurve]);
     expect(await km.export("bip39", "private")).to.be.equal(bip39mnemonic);
     expect(await km.export("wif", "private")).to.be.equal(privateKeyWIF);
     expect(await km.export("jwk", "private")).to.be.eql(jsonWebKey);
     console.log(await km.export("ssh", "private"));
-    console.log(await km.export("ssh", "public", "test"));
+    console.log(await km.export("ssh", "public", `exported-from: ${type}`));
 
 }
 
 it("Imports Private Key as Mnemonic", async function () {
 
     await km.import(bip39mnemonic);
-    await runAssertions();
+    await runAssertions("bip39");
 
 });
 
 it("Imports Private Key as WIF", async function () {
 
     await km.import(privateKeyWIF, "wif");
-    await runAssertions();
+    await runAssertions("wif");
 
 });
 
 it("Imports Private Key as hex string", async function () {
 
-    await km.import(privateKeyHex);
-    await runAssertions();
+    await km.import(privateKeyHex, "hex");
+    await runAssertions("hex");
 
 });
 
 it("Imports Private Key as JsonWebKey", async function () {
-    await km.import(jsonWebKey);
-    await runAssertions();
+    await km.import(jsonWebKey, "jwk");
+    await runAssertions("jwk");
+});
+
+it("Imports Private Key as raw", async function () {
+
+    await km.import(Buffer.from(privateKeyHex, "hex"), "raw");
+    await runAssertions("raw");
+
 });

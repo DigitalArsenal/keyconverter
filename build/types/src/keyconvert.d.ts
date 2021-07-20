@@ -1,13 +1,13 @@
 /// <reference types="node" />
-import "webcrypto-liner";
 /**
+
  * @type
  *
  * @description
  *
  *
  */
-declare type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "x509";
+export declare type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "x509";
 /**
  * @type
  *
@@ -30,14 +30,10 @@ declare type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "x
  * unwrapKey: The key may be used to unwrap a key.
  */
 declare type KeyUsageOptions = "encrypt" | "decrypt" | "sign" | "verify" | "deriveKey" | "deriveBits" | "wrapKey" | "unwrapKey";
-declare type NamedCurve = {
-    name: string;
-    namedCurve: string;
-};
 export declare class keyconvert {
     privateKey: CryptoKey;
     publicKey: CryptoKey;
-    keyCurve: NamedCurve;
+    keyCurve: EcKeyGenParams;
     extractable: boolean;
     algorithm: AlgorithmIdentifier;
     keyUsages: Array<KeyUsageOptions>;
@@ -49,12 +45,13 @@ export declare class keyconvert {
      */
     private static jwkConversion;
     private static toHex;
-    export(encoding: EncodingOptions): Promise<JsonWebKey | ArrayBuffer | string>;
+    private static exportFormatError;
+    export(encoding: EncodingOptions, type?: KeyType, comment?: string): Promise<JsonWebKey | ArrayBuffer | string>;
     privateKeyHex(): Promise<string>;
     publicKeyHex(): Promise<string>;
     import(privateKey: Buffer, encoding?: KeyFormat): Promise<void>;
     import(privateKey: JsonWebKey): Promise<void>;
     import(privateKey: string, encoding?: EncodingOptions): Promise<void>;
-    constructor(namedCurve: NamedCurve, algorithm?: AlgorithmIdentifier, extractable?: boolean, keyUsages?: Array<KeyUsageOptions>);
+    constructor(namedCurve: EcKeyGenParams, algorithm?: AlgorithmIdentifier, extractable?: boolean, keyUsages?: Array<KeyUsageOptions>);
 }
 export {};

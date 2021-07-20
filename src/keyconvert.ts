@@ -21,7 +21,7 @@ let { subtle } = linerCrypto;
  * 
  */
 
-type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "x509";
+export type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "x509";
 
 /**
  * @type
@@ -108,7 +108,6 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
 -----END PRIVATE KEY-----`;
             let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
             if (type === "private") {
-                console.log(Object.keys(sshpk), sshpk.generatePrivateKey);
                 return sshkey.toString();
             } else {
 
@@ -144,7 +143,7 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
         let importJWK: JsonWebKey;
 
         if (["jwk", "pkcs8", "raw", "spki"].indexOf(encoding) > -1) {
-            this.privateKey = await subtle.importKey(encoding, privateKey, this.algorithm, this.extractable, this.keyUsages);
+            this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
             return;
         }
 
