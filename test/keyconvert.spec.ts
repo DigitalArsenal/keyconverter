@@ -10,7 +10,7 @@ const curves = {
     Ed25519: { name: "EdDSA", namedCurve: "Ed25519" }
 };
 
-let curve = curves.secp256r1;
+let curve = curves.Ed25519;
 let km = new keyconvert(curve);
 
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
@@ -43,45 +43,56 @@ let jsonWebKey = {
 };
 
 const runAssertions = async (type: EncodingOptions) => {
-    expect(await km.privateKeyHex()).to.be.equal(privateKeyHex);
-    expect(await km.publicKeyHex()).to.be.equal(publicKeyHex[curve.namedCurve]);
-    expect(await km.export("bip39", "private")).to.be.equal(bip39mnemonic);
-    expect(await km.export("wif", "private")).to.be.equal(privateKeyWIF);
-    expect(await km.export("jwk", "private")).to.be.eql(jsonWebKey);
+
+    const k = [
+        await km.privateKeyHex(),
+        await km.publicKeyHex(),
+        await km.export("bip39", "private"),
+        await km.export("wif", "private"),
+        await km.export("jwk", "private")
+    ];
+
+
+    expect(k[0]).to.be.equal(privateKeyHex);
+    expect(k[1]).to.be.equal(publicKeyHex[curve.namedCurve]);
+    expect(k[2]).to.be.equal(bip39mnemonic);
+    expect(k[3]).to.be.equal(privateKeyWIF);
+    expect(k[4]).to.be.eql(jsonWebKey);
+    console.log("\n", k.map(n => typeof n === "object" ? JSON.stringify(n, null, 4) : n).join("\n\n"));
     console.log(await km.export("ssh", "private"));
     console.log(await km.export("ssh", "public", `exported-from: ${type}`));
 
 }
+if (~curve.name.indexOf('256')) {
+    it("Imports Private Key as Mnemonic", async function () {
 
-it("Imports Private Key as Mnemonic", async function () {
+        await km.import(bip39mnemonic);
+        await runAssertions("bip39");
 
-    await km.import(bip39mnemonic);
-    await runAssertions("bip39");
+    });
 
-});
+    it("Imports Private Key as WIF", async function () {
 
-it("Imports Private Key as WIF", async function () {
+        await km.import(privateKeyWIF, "wif");
+        await runAssertions("wif");
 
-    await km.import(privateKeyWIF, "wif");
-    await runAssertions("wif");
+    });
 
-});
+    it("Imports Private Key as hex string", async function () {
 
-it("Imports Private Key as hex string", async function () {
+        await km.import(privateKeyHex, "hex");
+        await runAssertions("hex");
 
-    await km.import(privateKeyHex, "hex");
-    await runAssertions("hex");
+    });
 
-});
-
-it("Imports Private Key as JsonWebKey", async function () {
-    await km.import(jsonWebKey, "jwk");
-    await runAssertions("jwk");
-});
-
+    it("Imports Private Key as JsonWebKey", async function () {
+        await km.import(jsonWebKey, "jwk");
+        await runAssertions("jwk");
+    });
+}
 it("Imports Private Key as raw", async function () {
-
     await km.import(Buffer.from(privateKeyHex, "hex"), "raw");
+    console.log(km);
     await runAssertions("raw");
 
 });
