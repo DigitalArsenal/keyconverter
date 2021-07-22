@@ -7,10 +7,11 @@ import * as bip39 from "bip39";
 const curves = {
     secp256k1: { name: "ECDSA", namedCurve: "K-256" },
     secp256r1: { name: "ECDSA", namedCurve: "P-256" },
-    Ed25519: { name: "EdDSA", namedCurve: "Ed25519" }
+    ed25519: { name: "EdDSA", namedCurve: "Ed25519" },
+    x25519: { name: "ECDH-ES", namedCurve: "x25519" }
 };
 
-let curve = curves.Ed25519;
+let curve = curves.ed25519;
 let km = new keyconvert(curve);
 
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
@@ -63,36 +64,48 @@ const runAssertions = async (type: EncodingOptions) => {
     console.log(await km.export("ssh", "public", `exported-from: ${type}`));
 
 }
-if (~curve.name.indexOf('256')) {
-    it("Imports Private Key as Mnemonic", async function () {
 
-        await km.import(bip39mnemonic);
-        await runAssertions("bip39");
 
-    });
+/*
+it("Imports Private Key as Mnemonic", async function () {
 
-    it("Imports Private Key as WIF", async function () {
+    await km.import(bip39mnemonic);
+    await runAssertions("bip39");
 
-        await km.import(privateKeyWIF, "wif");
-        await runAssertions("wif");
+});
 
-    });
+it("Imports Private Key as WIF", async function () {
 
-    it("Imports Private Key as hex string", async function () {
+    await km.import(privateKeyWIF, "wif");
+    await runAssertions("wif");
 
-        await km.import(privateKeyHex, "hex");
-        await runAssertions("hex");
+});
 
-    });
+it("Imports Private Key as hex string", async function () {
 
-    it("Imports Private Key as JsonWebKey", async function () {
-        await km.import(jsonWebKey, "jwk");
-        await runAssertions("jwk");
-    });
-}
+    await km.import(privateKeyHex, "hex");
+    await runAssertions("hex");
+
+});
+
+it("Imports Private Key as JsonWebKey", async function () {
+    await km.import(jsonWebKey, "jwk");
+    await runAssertions("jwk");
+});
+*/
+
+import * as liner from "../lib/webcrypto.liner.index.es";
+
+const { crypto: linerCrypto } = liner;
+
+let { subtle } = linerCrypto;
+
 it("Imports Private Key as raw", async function () {
-    await km.import(Buffer.from(privateKeyHex, "hex"), "raw");
-    console.log(km);
-    await runAssertions("raw");
+    let key = await subtle.generateKey(curves.ed25519, true, ['sign', 'verify']);
+    console.log(await subtle.exportKey("jwk", key.privateKey));
+    let key2 = await subtle.generateKey(curves.x25519, true, ['deriveBits', 'deriveKey']);
+    console.log(await subtle.exportKey("jwk", key2.privateKey));
+    //await km.import(Buffer.from(privateKeyHex, "hex"), "raw");
+    //await runAssertions("raw");
 
 });

@@ -12,6 +12,8 @@ const { crypto: linerCrypto } = liner;
 
 let { subtle } = linerCrypto;
 
+x509.cryptoProvider.set(liner);
+
 /**
 
  * @type
@@ -21,7 +23,7 @@ let { subtle } = linerCrypto;
  * 
  */
 
-export type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "x509";
+export type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "x509" | "raw:private";
 
 /**
  * @type
@@ -134,7 +136,7 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
         return keyconvert.toHex(publicKey);
     }
 
-    public async import(privateKey: Buffer, encoding?: KeyFormat): Promise<void>;
+    public async import(privateKey: Buffer, encoding?: EncodingOptions): Promise<void>;
     public async import(privateKey: JsonWebKey): Promise<void>;
     public async import(privateKey: string, encoding?: EncodingOptions): Promise<void>;
     public async import(privateKey: any, encoding?: EncodingOptions): Promise<void> {
@@ -142,7 +144,7 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
         let convert: Boolean = true;
         let importJWK: JsonWebKey;
 
-        if (["jwk", "pkcs8", "raw", "spki"].indexOf(encoding) > -1) {
+        if (~["jwk", "pkcs8", "raw", "spki"].indexOf(encoding)) {
             this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
             return;
         }

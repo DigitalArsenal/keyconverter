@@ -79,7 +79,7 @@
     "buffer": "^6.0.3",
     "inquirer": "^8.1.1",
     "sshpk": "^1.16.1",
-    "webcrypto-liner": "^1.2.4",
+    "webcrypto-liner": "github:DigitalArsenal/webcrypto-liner#DA_change_crypto_providers",
     "wif": "^2.0.6"
   }
 }
