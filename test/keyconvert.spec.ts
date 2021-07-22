@@ -104,8 +104,7 @@ it("Imports Private Key as raw", async function () {
     let key = await subtle.generateKey(curves.ed25519, true, ['sign', 'verify']);
     console.log(await subtle.exportKey("jwk", key.privateKey));
     let key2 = await subtle.generateKey(curves.x25519, true, ['deriveBits', 'deriveKey']);
-    console.log(await subtle.exportKey("jwk", key2.privateKey));
-    //await km.import(Buffer.from(privateKeyHex, "hex"), "raw");
+    console.log(key2.privateKey.data.pub.x.toBytes());
+    await km.import(key2.privateKey);
     //await runAssertions("raw");
-
 });

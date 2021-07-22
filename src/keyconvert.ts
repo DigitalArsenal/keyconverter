@@ -8,6 +8,8 @@ import * as bip39 from "bip39";
 import { EcAlgorithm } from "../lib/x509.es";
 import { Buffer } from 'buffer';
 
+const { CryptoKey } = liner;
+
 const { crypto: linerCrypto } = liner;
 
 let { subtle } = linerCrypto;
@@ -139,49 +141,55 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
     public async import(privateKey: Buffer, encoding?: EncodingOptions): Promise<void>;
     public async import(privateKey: JsonWebKey): Promise<void>;
     public async import(privateKey: string, encoding?: EncodingOptions): Promise<void>;
+    public async import(privateKey: CryptoKey): Promise<void>;
     public async import(privateKey: any, encoding?: EncodingOptions): Promise<void> {
 
         let convert: Boolean = true;
         let importJWK: JsonWebKey;
 
-        if (~["jwk", "pkcs8", "raw", "spki"].indexOf(encoding)) {
-            this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
-            return;
-        }
+        if (privateKey instanceof CryptoKey) {
+            this.privateKey = privateKey;
+        } else {
 
-        if (typeof privateKey === "string") {
-            if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
-                encoding = "hex";
+            if (~["jwk", "pkcs8", "raw", "spki"].indexOf(encoding)) {
+                this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
+                return;
             }
-            if (privateKey.indexOf(" ") > -1 || encoding === "bip39") {
-                privateKey = bip39.mnemonicToEntropy(privateKey);
-            } else if (encoding === "wif") {
-                const decodedWif = wif.decode(privateKey);
-                privateKey = keyconvert.toHex(decodedWif.privateKey);
-                encoding = "hex";
-            } else if (!encoding) {
-                throw Error(`Unknown Private Key Encoding: ${encoding}`);
+
+            if (typeof privateKey === "string") {
+                if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
+                    encoding = "hex";
+                }
+                if (privateKey.indexOf(" ") > -1 || encoding === "bip39") {
+                    privateKey = bip39.mnemonicToEntropy(privateKey);
+                } else if (encoding === "wif") {
+                    const decodedWif = wif.decode(privateKey);
+                    privateKey = keyconvert.toHex(decodedWif.privateKey);
+                    encoding = "hex";
+                } else if (!encoding) {
+                    throw Error(`Unknown Private Key Encoding: ${encoding}`);
+                }
+            } else if ((privateKey as JsonWebKey).d) {
+                importJWK = privateKey;
+                convert = false;
+            } else if (!(privateKey instanceof Buffer)) {
+                throw Error(`Unknown Input: ${privateKey}`);
             }
-        } else if ((privateKey as JsonWebKey).d) {
-            importJWK = privateKey;
-            convert = false;
-        } else if (!(privateKey instanceof Buffer)) {
-            throw Error(`Unknown Input: ${privateKey}`);
-        }
 
-        if (convert) {
-            encoding = "hex";
-            privateKey = privateKey.toString("hex");
-            importJWK = keyconvert.jwkConversion(privateKey, this.keyCurve, encoding);
-        }
+            if (convert) {
+                encoding = "hex";
+                privateKey = privateKey.toString("hex");
+                importJWK = keyconvert.jwkConversion(privateKey, this.keyCurve, encoding);
+            }
 
-        this.privateKey = await subtle.importKey(
-            "jwk",
-            importJWK,
-            this.keyCurve,
-            this.extractable,
-            this.keyUsages
-        );
+            this.privateKey = await subtle.importKey(
+                "jwk",
+                importJWK,
+                this.keyCurve,
+                this.extractable,
+                this.keyUsages
+            );
+        }
         return;
     }
 
