@@ -51,6 +51,10 @@ export type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ss
 
 type KeyUsageOptions = "encrypt" | "decrypt" | "sign" | "verify" | "deriveKey" | "deriveBits" | "wrapKey" | "unwrapKey";
 
+type ExtendedCryptoKey = {
+    data: any;
+}
+
 export class keyconvert {
     privateKey: CryptoKey;
     publicKey: CryptoKey;
@@ -88,54 +92,61 @@ export class keyconvert {
     }
 
     async export(encoding: EncodingOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string> {
-
-        const _hex = type === "private" ? await this.privateKeyHex() : await this.publicKeyHex();
-        if (encoding === "hex") {
-            return _hex;
-        } else if (encoding === "bip39") {
-            if (type === "public") {
-                keyconvert.exportFormatError(encoding, type);
-            } else {
-                return bip39.entropyToMnemonic(Buffer.from(_hex, "hex"));
-            }
-        } else if (encoding === "wif") {
-            if (type === "public") {
-                keyconvert.exportFormatError(encoding, type);
-            } else {
-                return wif.encode(128, Buffer.from(_hex, "hex"), true);
-            }
-        } else if (encoding === "ssh") {
-            let openSSHPEM = `-----BEGIN PRIVATE KEY-----
+        if (this.privateKey === undefined) {
+            throw Error("No Private Key");
+        } else {
+            const _hex = type === "private" ? await this.privateKeyHex() : await this.publicKeyHex();
+            if (encoding === "hex") {
+                return _hex;
+            } else if (encoding === "bip39") {
+                if (type === "public") {
+                    keyconvert.exportFormatError(encoding, type);
+                } else {
+                    return bip39.entropyToMnemonic(Buffer.from(_hex, "hex"));
+                }
+            } else if (encoding === "wif") {
+                if (type === "public") {
+                    keyconvert.exportFormatError(encoding, type);
+                } else {
+                    return wif.encode(128, Buffer.from(_hex, "hex"), true);
+                }
+            } else if (encoding === "ssh") {
+                let openSSHPEM = `-----BEGIN PRIVATE KEY-----
 ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', this.privateKey))))
-                    .match(/.{1,64}/g)
-                    .join("\n")}
+                        .match(/.{1,64}/g)
+                        .join("\n")}
 -----END PRIVATE KEY-----`;
-            let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
-            if (type === "private") {
-                return sshkey.toString();
-            } else {
+                let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
+                if (type === "private") {
+                    return sshkey.toString();
+                } else {
 
-                sshkey.comment = comment;
-                return sshkey.toPublic().toString("ssh");
+                    sshkey.comment = comment;
+                    return sshkey.toPublic().toString("ssh");
+                }
+                return
+            } else if (encoding) {
+                return await subtle.exportKey(encoding, type === "private" ? this.privateKey : this.publicKey);
             }
-            return
-        } else if (encoding) {
-            return await subtle.exportKey(encoding, type === "private" ? this.privateKey : this.publicKey);
         }
-
     }
 
     async privateKeyHex(): Promise<string> {
-        let jwkPrivateKey = await subtle.exportKey("jwk", this.privateKey);
-        return base64URL.decode(jwkPrivateKey.d, "hex");
+        if (this.privateKey === undefined) {
+            throw Error("No Private Key");
+        } else {
+            let jwkPrivateKey = await subtle.exportKey("jwk", this.privateKey);
+            return base64URL.decode(jwkPrivateKey.d, "hex");
+        }
     }
 
     async publicKeyHex(): Promise<string> {
-        let keyExt = await subtle.exportKey("jwk", this.privateKey);
-        let { d, ...pubKeyExt } = keyExt;
-        this.publicKey = await subtle.importKey("jwk", pubKeyExt, this.keyCurve, true, ["verify"])
-        let publicKey = await subtle.exportKey("raw", this.publicKey);
-        return keyconvert.toHex(publicKey);
+        if (this.privateKey === undefined) {
+            throw Error("No Private Key");
+        } else {
+            return (this.privateKey as unknown as ExtendedCryptoKey).data.getPublic("hex");
+
+        }
     }
 
     public async import(privateKey: Buffer, encoding?: EncodingOptions): Promise<void>;

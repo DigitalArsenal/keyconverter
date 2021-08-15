@@ -52,7 +52,7 @@
     "@types/base64-url": "^2.2.0",
     "@types/expect.js": "^0.3.29",
     "@types/mocha": "^5.2.5",
-    "@types/node": "^15.12.5",
+    "@types/node": "^16.3.0",
     "@types/wif": "^2.0.2",
     "argon2": "^0.28.2",
     "babel-preset-env": "^1.7.0",
