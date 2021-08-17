@@ -105,3 +105,6 @@ dist
 
 #vscode config
 .vscode
+
+#tmp
+tmp/

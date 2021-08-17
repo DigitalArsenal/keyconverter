@@ -7,6 +7,7 @@ import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { EcAlgorithm } from "../lib/x509.es";
 import { Buffer } from 'buffer';
+import { AsnEncodedType } from "@peculiar/x509/build/types/pem_data";
 
 const { CryptoKey } = liner;
 
@@ -25,7 +26,7 @@ x509.cryptoProvider.set(liner);
  * 
  */
 
-export type EncodingOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "x509" | "raw:private";
+export type FormatOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "pkcs1" | "x509" | "raw:private";
 
 /**
  * @type
@@ -91,7 +92,7 @@ export class keyconvert {
         throw Error(`${encoding} format is not available for KeyType ${type}`);
     }
 
-    async export(encoding: EncodingOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string> {
+    async export(encoding: FormatOptions, type: KeyType = "public", comment?: string, asnType?: KeyFormat): Promise<JsonWebKey | ArrayBuffer | string> {
         if (this.privateKey === undefined) {
             throw Error("No Private Key");
         } else {
@@ -116,15 +117,14 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
                         .match(/.{1,64}/g)
                         .join("\n")}
 -----END PRIVATE KEY-----`;
+                console.log(openSSHPEM);
                 let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
                 if (type === "private") {
-                    return sshkey.toString();
+                    return sshkey.toString("pkcs8");
                 } else {
-
                     sshkey.comment = comment;
                     return sshkey.toPublic().toString("ssh");
                 }
-                return
             } else if (encoding) {
                 return await subtle.exportKey(encoding, type === "private" ? this.privateKey : this.publicKey);
             }
@@ -149,42 +149,50 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
         }
     }
 
-    public async import(privateKey: Buffer, encoding?: EncodingOptions): Promise<void>;
+    public async import(privateKey: Buffer, encoding?: FormatOptions): Promise<void>;
     public async import(privateKey: JsonWebKey): Promise<void>;
-    public async import(privateKey: string, encoding?: EncodingOptions): Promise<void>;
+    public async import(privateKey: string, encoding?: FormatOptions): Promise<void>;
     public async import(privateKey: CryptoKey): Promise<void>;
-    public async import(privateKey: any, encoding?: EncodingOptions): Promise<void> {
+    public async import(privateKey: any, encoding?: FormatOptions): Promise<void> {
 
         let convert: Boolean = true;
         let importJWK: JsonWebKey;
 
+        this.privateKey = undefined;
+
         if (privateKey instanceof CryptoKey) {
             this.privateKey = privateKey;
         } else {
-
-            if (~["jwk", "pkcs8", "raw", "spki"].indexOf(encoding)) {
-                this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
-                return;
-            }
-
-            if (typeof privateKey === "string") {
-                if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
-                    encoding = "hex";
+            if (~["raw", "raw:private", undefined].indexOf(encoding)) {
+                convert = true;
+            } else {
+                if (~["jwk", "pkcs8", "spki"].indexOf(encoding)) {
+                    if (~["pkcs8", "pem"].indexOf(encoding)) {
+                        privateKey = Buffer.from(privateKey.split("\n").filter((n: any) => { return !~n.indexOf("-") }).join(""), 'base64');
+                    }
+                    this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
+                    return;
                 }
-                if (privateKey.indexOf(" ") > -1 || encoding === "bip39") {
-                    privateKey = bip39.mnemonicToEntropy(privateKey);
-                } else if (encoding === "wif") {
-                    const decodedWif = wif.decode(privateKey);
-                    privateKey = keyconvert.toHex(decodedWif.privateKey);
-                    encoding = "hex";
-                } else if (!encoding) {
-                    throw Error(`Unknown Private Key Encoding: ${encoding}`);
+
+                if (typeof privateKey === "string") {
+                    if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
+                        encoding = "hex";
+                    }
+                    if (privateKey.indexOf(" ") > -1 || encoding === "bip39") {
+                        privateKey = bip39.mnemonicToEntropy(privateKey);
+                    } else if (encoding === "wif") {
+                        const decodedWif = wif.decode(privateKey);
+                        privateKey = keyconvert.toHex(decodedWif.privateKey);
+                        encoding = "hex";
+                    } else if (!encoding) {
+                        throw Error(`Unknown Private Key Encoding: ${encoding}`);
+                    }
+                } else if ((privateKey as JsonWebKey).d) {
+                    importJWK = privateKey;
+                    convert = false;
+                } else if (!(privateKey instanceof Buffer)) {
+                    throw Error(`Unknown Input: ${privateKey}`);
                 }
-            } else if ((privateKey as JsonWebKey).d) {
-                importJWK = privateKey;
-                convert = false;
-            } else if (!(privateKey instanceof Buffer)) {
-                throw Error(`Unknown Input: ${privateKey}`);
             }
 
             if (convert) {
@@ -200,6 +208,7 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
                 this.extractable,
                 this.keyUsages
             );
+            console.log(convert, importJWK, this.privateKey);
         }
         return;
     }

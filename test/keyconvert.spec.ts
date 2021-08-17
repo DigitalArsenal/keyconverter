@@ -1,6 +1,7 @@
 import assert from "assert";
-import { keyconvert, EncodingOptions } from "../src/keyconvert";
+import { keyconvert, FormatOptions } from "../src/keyconvert";
 import * as liner from "../lib/webcrypto.liner.index.es";
+import { readFileSync } from "fs";
 const { crypto: linerCrypto } = liner;
 let { subtle: linerSubtle } = linerCrypto;
 
@@ -14,8 +15,14 @@ const curves = {
     x25519: { name: "ECDH-ES", namedCurve: "x25519" }
 };
 
-let curve = curves.ed25519;
+let curve = curves.secp256r1;
 
+
+let privateKeyPEM = `-----BEGIN EC PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAGhRANCAARrF9Hy4SxCR/i85uVjpEDydwN9gS3r
+M6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1
+-----END EC PRIVATE KEY-----`;
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
 let privateKeyHex = new Array(64).join("0") + "1";
 let privateKeyWIF = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
@@ -57,31 +64,30 @@ let jsonWebKeyOKP = {
 
 let km = new keyconvert(curve);
 
-const runAssertions = async (type: EncodingOptions) => {
-
+const runAssertions = async (type: FormatOptions) => {
     const x = async (p: keyconvert) => await Promise.all([
         p.privateKeyHex(),
         p.publicKeyHex(),
         p.export("bip39", "private"),
         p.export("wif", "private"),
-        p.export("jwk", "private")
-    ])
-
+        p.export("jwk", "private"),
+        p.export("pkcs8", "private")
+    ]);
     const k = await x(km);
-
+    console.log(await km.export("ssh", "private"));
     expect(k[0]).to.be.equal(privateKeyHex);
     expect(k[1]).to.be.equal(publicKeyHex[curve.namedCurve]);
     expect(k[2]).to.be.equal(bip39mnemonic);
     expect(k[3]).to.be.equal(privateKeyWIF);
-    expect(k[4]).to.be.eql(jsonWebKeyOKP);
-    console.log("\n", k.map(n => typeof n === "object" ? JSON.stringify(n, null, 4) : n).join("\n\n"));
-    console.log(await km.export("ssh", "private"));
-    console.log(await km.export("ssh", "public", `exported-from: ${type}`));
+    expect(!!~[jsonWebKeyEC, jsonWebKeyOKP].map(j => JSON.stringify(j)).indexOf(JSON.stringify(k[4]))).to.be.eql(true);
+    /*
+       console.log("\n", k.map(n => typeof n === "object" ? JSON.stringify(n, null, 4) : n).join("\n\n"));
+       console.log(await km.export("ssh", "private"));
+       console.log(await km.export("ssh", "public", `exported-from: ${type}`));
+       */
 
 }
-
-
-
+/*
 it("Imports Private Key as Mnemonic", async function () {
     await km.import(bip39mnemonic);
     await runAssertions("bip39");
@@ -102,10 +108,15 @@ it("Imports Private Key as JsonWebKey", async function () {
     await km.import(jsonWebKeyOKP, "jwk");
     await runAssertions("jwk");
 });
-
+*/
 it("Imports Private Key as raw", async function () {
-    km.import(Buffer.from(privateKeyHex, 'hex'));
-    await runAssertions("raw");
+    await km.import(Buffer.from(privateKeyHex, 'hex'), "raw:private");
+    await runAssertions("raw:private");
 });
+
+it("Imports Private Key as PEM", async function () {
+    await km.import(privateKeyPEM, "pkcs8");
+    await runAssertions("pkcs8");
+});/**/
 
 //TODO loop through all key curves, difference between JWK OKP and EC
