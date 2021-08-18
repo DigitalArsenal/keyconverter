@@ -82,8 +82,9 @@ const runAssertions = async (type: FormatOptions) => {
         p.export("pkcs1", "private"),
         p.export("pkcs8", "private")
     ]);
+
     const k = await x(km);
-    console.log(k, type)
+
     expect(k[0]).to.be.equal(privateKeyHex);
     expect(k[1]).to.be.equal(publicKeyHex[curve.namedCurve]);
     expect(k[2]).to.be.equal(bip39mnemonic);
@@ -91,6 +92,7 @@ const runAssertions = async (type: FormatOptions) => {
     expect(!!~[jsonWebKeyEC, jsonWebKeyOKP].map(j => JSON.stringify(j)).indexOf(JSON.stringify(k[4]))).to.be.eql(true);
     expect(k[5].toString().trim()).to.be.equal(privateKeyPEMPKCS1);
     expect(k[6].toString().trim()).to.be.equal(privateKeyPEMPKCS8);
+    console.log(await km.exportX509Certificate());
     /* 
     console.log(await km.export("ssh", "private"));
       console.log("\n", k.map(n => typeof n === "object" ? JSON.stringify(n, null, 4) : n).join("\n\n"));

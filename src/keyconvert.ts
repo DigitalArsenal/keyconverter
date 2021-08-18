@@ -5,17 +5,22 @@ import wif from "wif";
 import * as x509 from "../lib/x509.es";
 import sshpk from "sshpk";
 import * as bip39 from "bip39";
-import { EcAlgorithm } from "../lib/x509.es";
 import { Buffer } from 'buffer';
-import { AsnEncodedType } from "@peculiar/x509/build/types/pem_data";
+import {
+    X509CertificateCreateParams,
+    BasicConstraintsExtension,
+    SubjectKeyIdentifierExtension,
+    AuthorityKeyIdentifierExtension,
+    KeyUsagesExtension
+} from "@peculiar/x509"
+import { listenerCount } from "stream";
 
+const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
 
 const { crypto: linerCrypto } = liner;
 
 let { subtle } = linerCrypto;
-
-x509.cryptoProvider.set(liner);
 
 /**
 
@@ -26,7 +31,7 @@ x509.cryptoProvider.set(liner);
  * 
  */
 
-export type FormatOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "pkcs1" | "x509" | "raw:private";
+export type FormatOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "pkcs1" | "raw:private";
 
 /**
  * @type
@@ -92,7 +97,7 @@ export class keyconvert {
         throw Error(`${encoding} format is not available for KeyType ${type}`);
     }
 
-    async export(encoding: FormatOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string> {
+    async export(encoding: FormatOptions, type: KeyType = "public", comment?: string,): Promise<JsonWebKey | ArrayBuffer | string> {
         if (this.privateKey === undefined) {
             throw Error("No Private Key");
         } else {
@@ -111,7 +116,7 @@ export class keyconvert {
                 } else {
                     return wif.encode(128, Buffer.from(_hex, "hex"), true);
                 }
-            } else if (~["ssh", "pem", "pkcs1", "pkcs8"].indexOf(encoding)) {
+            } else if (~["ssh", "pkcs1", "pkcs8"].indexOf(encoding)) {
                 let openSSHPEM = `-----BEGIN PRIVATE KEY-----
 ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", this.privateKey))))
                         .match(/.{1,64}/g)
@@ -119,10 +124,11 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
 -----END PRIVATE KEY-----`;
                 let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pkcs8");
                 if (type === "private") {
-                    if (~["pem", "ssh"].indexOf(encoding)) {
+                    if (~["ssh"].indexOf(encoding)) {
                         encoding = "pkcs8";
                     }
                     return sshkey.toString(encoding);
+
                 } else {
                     sshkey.comment = comment;
                     return sshkey.toPublic().toString("ssh");
@@ -146,9 +152,42 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
         if (this.privateKey === undefined) {
             throw Error("No Private Key");
         } else {
-            return (this.privateKey as unknown as ExtendedCryptoKey).data.getPublic("hex");
+            return (this.publicKey as unknown as ExtendedCryptoKey).data.getPublic("hex");
 
         }
+    }
+
+    public async exportX509Certificate(params: Partial<X509CertificateCreateParams> = {
+        serialNumber: `${Date.now()}`,
+        subject: `CN=localhost`,
+        issuer: `BTC`,
+        notBefore: new Date("2020/01/01"),
+        notAfter: new Date("2022/01/02"),
+        signingAlgorithm: {
+            name: "ECDSA",
+            hash: "SHA-256"
+        },
+        publicKey: this.publicKey,
+        signingKey: this.privateKey,
+        extensions: null,
+    }, encoding: string = "pem"): Promise<string> {
+
+        x509.cryptoProvider.set(liner.crypto);
+
+        let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
+
+        if (!params.extensions) {
+            let extensions =
+                [new x509.BasicConstraintsExtension(true, 2, true),
+                await x509.SubjectKeyIdentifierExtension.create(this.publicKey),
+                await x509.AuthorityKeyIdentifierExtension.create(this.publicKey),
+                new x509.KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)] as unknown as (BasicConstraintsExtension | SubjectKeyIdentifierExtension | AuthorityKeyIdentifierExtension | KeyUsagesExtension)[];
+            params.extensions = extensions;
+        }
+
+        const cert = x509.X509CertificateGenerator.create(params);
+
+        return (await cert).toString(encoding);
     }
 
     public async import(privateKey: Buffer, encoding?: FormatOptions): Promise<void>;
@@ -205,6 +244,13 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
                 this.extractable,
                 this.keyUsages
             );
+            let jwkPublic = await subtle.exportKey("jwk", this.privateKey);
+            delete jwkPublic.d;
+            this.publicKey = await subtle.importKey("jwk",
+                jwkPublic,
+                this.keyCurve,
+                this.extractable,
+                this.keyUsages);
         }
         return;
     }
