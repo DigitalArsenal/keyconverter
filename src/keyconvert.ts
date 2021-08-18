@@ -175,7 +175,7 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
                         return;
                     } else if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
                         encoding = "hex";
-                    } else if (privateKey.indexOf(" ") > -1 || encoding === "bip39") {
+                    } else if (encoding === "bip39") {
                         privateKey = bip39.mnemonicToEntropy(privateKey);
                     } else if (encoding === "wif") {
                         const decodedWif = wif.decode(privateKey);

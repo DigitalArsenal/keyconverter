@@ -83,7 +83,7 @@ const runAssertions = async (type: FormatOptions) => {
         p.export("pkcs8", "private")
     ]);
     const k = await x(km);
-
+    console.log(k, type)
     expect(k[0]).to.be.equal(privateKeyHex);
     expect(k[1]).to.be.equal(publicKeyHex[curve.namedCurve]);
     expect(k[2]).to.be.equal(bip39mnemonic);
@@ -99,9 +99,9 @@ const runAssertions = async (type: FormatOptions) => {
       */
 
 }
-/*
+/**/
 it("Imports Private Key as Mnemonic", async function () {
-    await km.import(bip39mnemonic);
+    await km.import(bip39mnemonic, "bip39");
     await runAssertions("bip39");
 });
 
@@ -125,7 +125,7 @@ it("Imports Private Key as raw", async function () {
     await km.import(Buffer.from(privateKeyHex, 'hex'), "raw:private");
     await runAssertions("raw:private");
 });
-*/
+
 it("Imports Private Key as PEM (pkcs1)", async function () {
     await km.import(privateKeyPEMPKCS1, "pkcs1");
     await runAssertions("pkcs1");
