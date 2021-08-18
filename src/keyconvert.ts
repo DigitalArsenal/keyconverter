@@ -117,7 +117,7 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
                         .match(/.{1,64}/g)
                         .join("\n")}
 -----END PRIVATE KEY-----`;
-                console.log(openSSHPEM);
+
                 let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
                 if (type === "private") {
                     return sshkey.toString("pkcs8");
@@ -166,19 +166,29 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
             if (~["raw", "raw:private", undefined].indexOf(encoding)) {
                 convert = true;
             } else {
-                if (~["jwk", "pkcs8", "spki"].indexOf(encoding)) {
-                    if (~["pkcs8", "pem"].indexOf(encoding)) {
+
+                /*if (~["jwk", "pkcs1", "pkcs8", "pem", "spki"].indexOf(encoding)) {
+                    if (~["pkcs1", "pkcs8", "pem"].indexOf(encoding)) {
                         privateKey = Buffer.from(privateKey.split("\n").filter((n: any) => { return !~n.indexOf("-") }).join(""), 'base64');
+                        this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
                     }
-                    this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
                     return;
-                }
+                }*/
 
                 if (typeof privateKey === "string") {
-                    if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
+                    if (privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
+                        let intermediate;
+                        try {
+                            intermediate = (sshpk.parsePrivateKey(privateKey, "pem")).toString("pkcs8");
+                        } catch (e) {
+                            intermediate = privateKey;
+                        }
+                        privateKey = Buffer.from(intermediate.split("\n").filter((n: any) => { return !~n.indexOf("-") }).join(""), 'base64');
+                        this.privateKey = await subtle.importKey("pkcs8", privateKey, this.keyCurve, this.extractable, this.keyUsages);
+                        return;
+                    } else if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
                         encoding = "hex";
-                    }
-                    if (privateKey.indexOf(" ") > -1 || encoding === "bip39") {
+                    } else if (privateKey.indexOf(" ") > -1 || encoding === "bip39") {
                         privateKey = bip39.mnemonicToEntropy(privateKey);
                     } else if (encoding === "wif") {
                         const decodedWif = wif.decode(privateKey);
@@ -208,7 +218,6 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
                 this.extractable,
                 this.keyUsages
             );
-            console.log(convert, importJWK, this.privateKey);
         }
         return;
     }

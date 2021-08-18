@@ -18,11 +18,18 @@ const curves = {
 let curve = curves.secp256r1;
 
 
-let privateKeyPEM = `-----BEGIN EC PRIVATE KEY-----
+let privateKeyPEMPKCS8 = `-----BEGIN EC PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAGhRANCAARrF9Hy4SxCR/i85uVjpEDydwN9gS3r
 M6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1
 -----END EC PRIVATE KEY-----`;
+
+let privateKeyPEMPKCS1 = `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoAoGCCqGSM49
+AwEHoUQDQgAEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/
+m47n60p8D54WK84zV2sxXs7LtkBoN79R9Q==
+-----END EC PRIVATE KEY-----`;
+
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
 let privateKeyHex = new Array(64).join("0") + "1";
 let privateKeyWIF = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
@@ -108,15 +115,22 @@ it("Imports Private Key as JsonWebKey", async function () {
     await km.import(jsonWebKeyOKP, "jwk");
     await runAssertions("jwk");
 });
-*/
+
 it("Imports Private Key as raw", async function () {
     await km.import(Buffer.from(privateKeyHex, 'hex'), "raw:private");
     await runAssertions("raw:private");
 });
-
-it("Imports Private Key as PEM", async function () {
-    await km.import(privateKeyPEM, "pkcs8");
+*/
+it("Imports Private Key as PEM (pkcs1)", async function () {
+    await km.import(privateKeyPEMPKCS1, "pkcs1");
     await runAssertions("pkcs8");
-});/**/
+});
+
+it("Imports Private Key as PEM (pkcs8)", async function () {
+    await km.import(privateKeyPEMPKCS8, "pkcs8");
+    await runAssertions("pkcs8");
+});
+
+/**/
 
 //TODO loop through all key curves, difference between JWK OKP and EC
