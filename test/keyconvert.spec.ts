@@ -4,6 +4,7 @@ import * as liner from "../lib/webcrypto.liner.index.es";
 import { readFileSync } from "fs";
 const { crypto: linerCrypto } = liner;
 let { subtle: linerSubtle } = linerCrypto;
+import sshpk from "sshpk";
 
 import * as bip32 from "bip32";
 import * as bip39 from "bip39";
@@ -17,18 +18,18 @@ const curves = {
 
 let curve = curves.secp256r1;
 
-
-let privateKeyPEMPKCS8 = `-----BEGIN EC PRIVATE KEY-----
-MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAGhRANCAARrF9Hy4SxCR/i85uVjpEDydwN9gS3r
-M6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1
------END EC PRIVATE KEY-----`;
-
 let privateKeyPEMPKCS1 = `-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoAoGCCqGSM49
 AwEHoUQDQgAEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/
 m47n60p8D54WK84zV2sxXs7LtkBoN79R9Q==
 -----END EC PRIVATE KEY-----`;
+
+let privateKeyPEMPKCS8 = `-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAGhRANCAARrF9Hy4SxCR/i85uVjpEDydwN9gS3r
+M6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1
+-----END PRIVATE KEY-----`;
+
 
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
 let privateKeyHex = new Array(64).join("0") + "1";
@@ -78,20 +79,24 @@ const runAssertions = async (type: FormatOptions) => {
         p.export("bip39", "private"),
         p.export("wif", "private"),
         p.export("jwk", "private"),
+        p.export("pkcs1", "private"),
         p.export("pkcs8", "private")
     ]);
     const k = await x(km);
-    console.log(await km.export("ssh", "private"));
+
     expect(k[0]).to.be.equal(privateKeyHex);
     expect(k[1]).to.be.equal(publicKeyHex[curve.namedCurve]);
     expect(k[2]).to.be.equal(bip39mnemonic);
     expect(k[3]).to.be.equal(privateKeyWIF);
     expect(!!~[jsonWebKeyEC, jsonWebKeyOKP].map(j => JSON.stringify(j)).indexOf(JSON.stringify(k[4]))).to.be.eql(true);
-    /*
-       console.log("\n", k.map(n => typeof n === "object" ? JSON.stringify(n, null, 4) : n).join("\n\n"));
-       console.log(await km.export("ssh", "private"));
-       console.log(await km.export("ssh", "public", `exported-from: ${type}`));
-       */
+    expect(k[5].toString().trim()).to.be.equal(privateKeyPEMPKCS1);
+    expect(k[6].toString().trim()).to.be.equal(privateKeyPEMPKCS8);
+    /* 
+    console.log(await km.export("ssh", "private"));
+      console.log("\n", k.map(n => typeof n === "object" ? JSON.stringify(n, null, 4) : n).join("\n\n"));
+      console.log(await km.export("ssh", "private"));
+      console.log(await km.export("ssh", "public", `exported-from: ${type}`));
+      */
 
 }
 /*
@@ -123,14 +128,13 @@ it("Imports Private Key as raw", async function () {
 */
 it("Imports Private Key as PEM (pkcs1)", async function () {
     await km.import(privateKeyPEMPKCS1, "pkcs1");
-    await runAssertions("pkcs8");
+    await runAssertions("pkcs1");
 });
 
 it("Imports Private Key as PEM (pkcs8)", async function () {
     await km.import(privateKeyPEMPKCS8, "pkcs8");
     await runAssertions("pkcs8");
 });
-
 /**/
 
 //TODO loop through all key curves, difference between JWK OKP and EC

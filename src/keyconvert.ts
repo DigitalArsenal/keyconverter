@@ -92,7 +92,7 @@ export class keyconvert {
         throw Error(`${encoding} format is not available for KeyType ${type}`);
     }
 
-    async export(encoding: FormatOptions, type: KeyType = "public", comment?: string, asnType?: KeyFormat): Promise<JsonWebKey | ArrayBuffer | string> {
+    async export(encoding: FormatOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string> {
         if (this.privateKey === undefined) {
             throw Error("No Private Key");
         } else {
@@ -111,16 +111,18 @@ export class keyconvert {
                 } else {
                     return wif.encode(128, Buffer.from(_hex, "hex"), true);
                 }
-            } else if (encoding === "ssh") {
+            } else if (~["ssh", "pem", "pkcs1", "pkcs8"].indexOf(encoding)) {
                 let openSSHPEM = `-----BEGIN PRIVATE KEY-----
-${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', this.privateKey))))
+${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", this.privateKey))))
                         .match(/.{1,64}/g)
                         .join("\n")}
 -----END PRIVATE KEY-----`;
-
-                let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pem");
+                let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pkcs8");
                 if (type === "private") {
-                    return sshkey.toString("pkcs8");
+                    if (~["pem", "ssh"].indexOf(encoding)) {
+                        encoding = "pkcs8";
+                    }
+                    return sshkey.toString(encoding);
                 } else {
                     sshkey.comment = comment;
                     return sshkey.toPublic().toString("ssh");
@@ -166,24 +168,9 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey('pkcs8', thi
             if (~["raw", "raw:private", undefined].indexOf(encoding)) {
                 convert = true;
             } else {
-
-                /*if (~["jwk", "pkcs1", "pkcs8", "pem", "spki"].indexOf(encoding)) {
-                    if (~["pkcs1", "pkcs8", "pem"].indexOf(encoding)) {
-                        privateKey = Buffer.from(privateKey.split("\n").filter((n: any) => { return !~n.indexOf("-") }).join(""), 'base64');
-                        this.privateKey = await subtle.importKey(encoding, privateKey, this.keyCurve, this.extractable, this.keyUsages);
-                    }
-                    return;
-                }*/
-
                 if (typeof privateKey === "string") {
                     if (privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
-                        let intermediate;
-                        try {
-                            intermediate = (sshpk.parsePrivateKey(privateKey, "pem")).toString("pkcs8");
-                        } catch (e) {
-                            intermediate = privateKey;
-                        }
-                        privateKey = Buffer.from(intermediate.split("\n").filter((n: any) => { return !~n.indexOf("-") }).join(""), 'base64');
+                        privateKey = Buffer.from((sshpk.parsePrivateKey(privateKey)).toString("pkcs8").split("\n").filter((n: any) => { return !~n.indexOf("-") }).join(""), 'base64');
                         this.privateKey = await subtle.importKey("pkcs8", privateKey, this.keyCurve, this.extractable, this.keyUsages);
                         return;
                     } else if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
