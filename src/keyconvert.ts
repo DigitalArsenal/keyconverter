@@ -11,9 +11,9 @@ import {
     BasicConstraintsExtension,
     SubjectKeyIdentifierExtension,
     AuthorityKeyIdentifierExtension,
-    KeyUsagesExtension
+    KeyUsagesExtension,
+    Extension
 } from "@peculiar/x509"
-import { listenerCount } from "stream";
 
 const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
@@ -177,11 +177,12 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
         let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
 
         if (!params.extensions) {
-            let extensions =
-                [new x509.BasicConstraintsExtension(true, 2, true),
-                await x509.SubjectKeyIdentifierExtension.create(this.publicKey),
-                await x509.AuthorityKeyIdentifierExtension.create(this.publicKey),
-                new x509.KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)] as unknown as (BasicConstraintsExtension | SubjectKeyIdentifierExtension | AuthorityKeyIdentifierExtension | KeyUsagesExtension)[];
+            let extensions: Extension[] =
+                [new BasicConstraintsExtension(true, 2, true),
+                await SubjectKeyIdentifierExtension.create(this.publicKey),
+                await AuthorityKeyIdentifierExtension.create(this.publicKey),
+                new KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)];
+
             params.extensions = extensions;
         }
 
