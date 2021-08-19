@@ -7,13 +7,8 @@ import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { Buffer } from 'buffer';
 import {
-    X509CertificateCreateParams,
-    BasicConstraintsExtension,
-    SubjectKeyIdentifierExtension,
-    AuthorityKeyIdentifierExtension,
-    KeyUsagesExtension,
-    Extension
-} from "@peculiar/x509"
+    X509CertificateCreateParams
+} from "@peculiar/x509";
 
 const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
@@ -177,12 +172,11 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
         let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
 
         if (!params.extensions) {
-            let extensions: Extension[] =
-                [new BasicConstraintsExtension(true, 2, true),
-                await SubjectKeyIdentifierExtension.create(this.publicKey),
-                await AuthorityKeyIdentifierExtension.create(this.publicKey),
-                new KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)];
-
+            let extensions: any[] =
+                [new x509.BasicConstraintsExtension(true, 2, true),
+                await x509.SubjectKeyIdentifierExtension.create(this.publicKey),
+                await x509.AuthorityKeyIdentifierExtension.create(this.publicKey),
+                new x509.KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)];
             params.extensions = extensions;
         }
 
