@@ -92,7 +92,7 @@ const runAssertions = async (type: FormatOptions) => {
     expect(!!~[jsonWebKeyEC, jsonWebKeyOKP].map(j => JSON.stringify(j)).indexOf(JSON.stringify(k[4]))).to.be.eql(true);
     expect(k[5].toString().trim()).to.be.equal(privateKeyPEMPKCS1);
     expect(k[6].toString().trim()).to.be.equal(privateKeyPEMPKCS8);
-    console.log(await km.exportX509Certificate());
+    console.log(await km.exportX509Certificate({serialNumber:"11111"}));
     /* 
     console.log(await km.export("ssh", "private"));
       console.log("\n", k.map(n => typeof n === "object" ? JSON.stringify(n, null, 4) : n).join("\n\n"));

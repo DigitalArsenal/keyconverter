@@ -152,35 +152,56 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
         }
     }
 
-    public async exportX509Certificate(params: Partial<X509CertificateCreateParams> = {
-        serialNumber: `${Date.now()}`,
-        subject: `CN=localhost`,
-        issuer: `BTC`,
-        notBefore: new Date("2020/01/01"),
-        notAfter: new Date("2022/01/02"),
-        signingAlgorithm: {
+    public async exportX509Certificate({
+        serialNumber = `${Date.now()}`,
+        subject = `CN = localhost`,
+        issuer = `BTC`,
+        notBefore = new Date("2020/01/01"),
+        notAfter = new Date("2022/01/02"),
+        signingAlgorithm = {
             name: "ECDSA",
             hash: "SHA-256"
         },
-        publicKey: this.publicKey,
-        signingKey: this.privateKey,
-        extensions: null,
-    }, encoding: string = "pem"): Promise<string> {
+        publicKey = this.publicKey,
+        signingKey = this.privateKey,
+        extensions = null,
+        encoding = "pem"
+    }: {
+        serialNumber?: string,
+        subject?: string,
+        issuer?: string,
+        notBefore?: Date,
+        notAfter?: Date,
+        signingAlgorithm?: Object,
+        publicKey?: CryptoKey,
+        signingKey?: CryptoKey,
+        extensions?: any[],
+        encoding?: string
+    } = {}): Promise<string> {
 
         x509.cryptoProvider.set(liner.crypto);
 
         let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
 
-        if (!params.extensions) {
+        if (!extensions) {
             let extensions: any[] =
                 [new x509.BasicConstraintsExtension(true, 2, true),
                 await x509.SubjectKeyIdentifierExtension.create(this.publicKey),
                 await x509.AuthorityKeyIdentifierExtension.create(this.publicKey),
                 new x509.KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)];
-            params.extensions = extensions;
         }
 
-        const cert = x509.X509CertificateGenerator.create(params);
+        const cert = x509.X509CertificateGenerator.create({
+            serialNumber,
+            subject,
+            issuer,
+            notBefore,
+            notAfter,
+            signingAlgorithm,
+            publicKey,
+            signingKey,
+            extensions,
+        });
 
         return (await cert).toString(encoding);
     }
@@ -216,13 +237,13 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
                         privateKey = keyconvert.toHex(decodedWif.privateKey);
                         encoding = "hex";
                     } else if (!encoding) {
-                        throw Error(`Unknown Private Key Encoding: ${encoding}`);
+                        throw Error(`Unknown Private Key Encoding: ${encoding} `);
                     }
                 } else if ((privateKey as JsonWebKey).d) {
                     importJWK = privateKey;
                     convert = false;
                 } else if (!(privateKey instanceof Buffer)) {
-                    throw Error(`Unknown Input: ${privateKey}`);
+                    throw Error(`Unknown Input: ${privateKey} `);
                 }
             }
 
