@@ -1,13 +1,4 @@
-import assert from "assert";
 import { keyconvert, FormatOptions } from "../src/keyconvert";
-import * as liner from "../lib/webcrypto.liner.index.es";
-import { readFileSync } from "fs";
-const { crypto: linerCrypto } = liner;
-let { subtle: linerSubtle } = linerCrypto;
-import sshpk from "sshpk";
-
-import * as bip32 from "bip32";
-import * as bip39 from "bip39";
 
 const curves = {
     secp256k1: { name: "ECDSA", namedCurve: "K-256" },
@@ -92,7 +83,7 @@ const runAssertions = async (type: FormatOptions) => {
     expect(!!~[jsonWebKeyEC, jsonWebKeyOKP].map(j => JSON.stringify(j)).indexOf(JSON.stringify(k[4]))).to.be.eql(true);
     expect(k[5].toString().trim()).to.be.equal(privateKeyPEMPKCS1);
     expect(k[6].toString().trim()).to.be.equal(privateKeyPEMPKCS8);
-    console.log(await km.exportX509Certificate({serialNumber:"11111"}));
+    console.log(await km.exportX509Certificate());
     /* 
     console.log(await km.export("ssh", "private"));
       console.log("\n", k.map(n => typeof n === "object" ? JSON.stringify(n, null, 4) : n).join("\n\n"));
