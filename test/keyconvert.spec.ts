@@ -24,11 +24,6 @@ M6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1
 -----END PRIVATE KEY-----`
     },
     "Ed25519": {
-        privateKeyPEMPKCS1: `-----BEGIN EdDSA PRIVATE KEY-----
-MFECAQEEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoAUGAytlcKEj
-AyEATLWr9q15+/WrvMr8wmnYXNJlHtS4hbWGnyQa7fCluik=
------END EdDSA PRIVATE KEY-----`,
-
         privateKeyPEMPKCS8: `-----BEGIN PRIVATE KEY-----
 MC4CAQAwBQYDK2VwBCIEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB
 -----END PRIVATE KEY-----`
@@ -71,7 +66,7 @@ let jsonWebKeyEC: any = {
 
 let jsonWebKeyOKP: any = {
     d: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE',
-    x: 'TLWr9q15-_WrvMr8wmnYXA',
+    ...jWKPub[curve.namedCurve],
     ext: true,
     key_ops: ['sign', 'verify', 'deriveKey', 'deriveBits'],
     crv: curve.namedCurve,
@@ -101,14 +96,15 @@ const runAssertions = async (type: FormatOptions) => {
 
     expect(jsonWebKeyOKP).to.be.eql(k[4]);
 
-    expect(k[5].toString().trim()).to.be.equal(PEMS[curve.namedCurve].privateKeyPEMPKCS1);
+    if (PEMS[curve.namedCurve].privateKeyPEMPKCS1) {
+        expect(k[5].toString().trim()).to.be.equal(PEMS[curve.namedCurve].privateKeyPEMPKCS1);
+    }
     expect(k[6].toString().trim()).to.be.equal(PEMS[curve.namedCurve].privateKeyPEMPKCS8);
     console.log(await km.exportX509Certificate({ signingAlgorithm: curve }));
     console.log(await km.bitcoinAddress());
 
     console.log(await km.export("ssh", "private"));
     console.log(await km.export("ssh", "public", `exported-from: ${type}`));
-    /*   */
 
 }
 
