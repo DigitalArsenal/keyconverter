@@ -6,9 +6,8 @@ import * as x509 from "../lib/x509.es";
 import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { Buffer } from 'buffer';
-import {
-    X509CertificateCreateParams
-} from "@peculiar/x509";
+import * as bitcoinjs from "bitcoinjs-lib";
+import elliptic, { eddsa } from "elliptic";
 
 const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
@@ -73,14 +72,16 @@ export class keyconvert {
     private static jwkConversion(
         prvHex: string,
         curve: EcKeyGenParams,
-        format: string = "hex"
+        format: string = "hex",
+        x?: string,
+        y?: string,
     ): JsonWebKey {
         return {
-            kty: "EC",
+            kty: ~curve.namedCurve.indexOf("secp") ? "EC" : "OKP",
             crv: curve.namedCurve,
             d: base64URL.encode(prvHex, format),
-            x: null,
-            y: null
+            x: base64URL.encode(x, format),
+            y: base64URL.encode(y, format)
         };
     }
 
@@ -92,7 +93,8 @@ export class keyconvert {
         throw Error(`${encoding} format is not available for KeyType ${type}`);
     }
 
-    async export(encoding: FormatOptions, type: KeyType = "public", comment?: string,): Promise<JsonWebKey | ArrayBuffer | string> {
+    async export(encoding: FormatOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string> {
+
         if (this.privateKey === undefined) {
             throw Error("No Private Key");
         } else {
@@ -118,16 +120,25 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
                         .join("\n")}
 -----END PRIVATE KEY-----`;
                 let sshkey = sshpk.parsePrivateKey(openSSHPEM, "pkcs8");
+                if (type === "private" &&
+                    this.keyCurve.namedCurve.toLowerCase() === "ed25519" &&
+                    ~["ssh", "pkcs8"].indexOf(encoding)) {
+                    return openSSHPEM;
+                }
                 if (type === "private") {
                     if (~["ssh"].indexOf(encoding)) {
                         encoding = "pkcs8";
                     }
                     return sshkey.toString(encoding);
-
                 } else {
                     sshkey.comment = comment;
                     return sshkey.toPublic().toString("ssh");
                 }
+            } else if (encoding === "jwk") {
+                let publicKey = await subtle.exportKey(encoding, this.publicKey);
+                let privateKey = await subtle.exportKey(encoding, this.privateKey);
+                return Object.assign(privateKey, publicKey);
+
             } else if (encoding) {
                 return await subtle.exportKey(encoding, type === "private" ? this.privateKey : this.publicKey);
             }
@@ -152,16 +163,22 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
         }
     }
 
+    async bitcoinAddress(): Promise<string> {
+
+        const bjsKeyPair = bitcoinjs.ECPair.fromWIF((await this.export("wif", "private")).toString());
+        const { address } = bitcoinjs.payments.p2pkh({
+            pubkey: bjsKeyPair.publicKey,
+        });
+        return address;
+    }
+
     public async exportX509Certificate({
         serialNumber = `${Date.now()}`,
         subject = `CN = localhost`,
         issuer = `BTC`,
         notBefore = new Date("2020/01/01"),
         notAfter = new Date("2022/01/02"),
-        signingAlgorithm = {
-            name: "ECDSA",
-            hash: "SHA-256"
-        },
+        signingAlgorithm = null,
         publicKey = this.publicKey,
         signingKey = this.privateKey,
         extensions = null,
@@ -184,12 +201,12 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
         let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
 
         if (!extensions) {
-            let extensions: any[] =
+            extensions =
                 [new x509.BasicConstraintsExtension(true, 2, true),
                 await x509.SubjectKeyIdentifierExtension.create(this.publicKey),
                 await x509.AuthorityKeyIdentifierExtension.create(this.publicKey),
                 new x509.KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)];
-        }
+        };
 
         const cert = x509.X509CertificateGenerator.create({
             serialNumber,
@@ -227,9 +244,6 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
                     if (privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
                         privateKey = Buffer.from((sshpk.parsePrivateKey(privateKey)).toString("pkcs8").split("\n").filter((n: any) => { return !~n.indexOf("-") }).join(""), 'base64');
                         this.privateKey = await subtle.importKey("pkcs8", privateKey, this.keyCurve, this.extractable, this.keyUsages);
-                        return;
-                    } else if (privateKey.match(/[0-9a-fA-F]+/) && !encoding) {
-                        encoding = "hex";
                     } else if (encoding === "bip39") {
                         privateKey = bip39.mnemonicToEntropy(privateKey);
                     } else if (encoding === "wif") {
@@ -240,7 +254,7 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
                         throw Error(`Unknown Private Key Encoding: ${encoding} `);
                     }
                 } else if ((privateKey as JsonWebKey).d) {
-                    importJWK = privateKey;
+                    importJWK = Object.assign({}, privateKey);
                     convert = false;
                 } else if (!(privateKey instanceof Buffer)) {
                     throw Error(`Unknown Input: ${privateKey} `);
@@ -250,20 +264,30 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
             if (convert) {
                 encoding = "hex";
                 privateKey = privateKey.toString("hex");
-                importJWK = keyconvert.jwkConversion(privateKey, this.keyCurve, encoding);
-            }
+                let x, y;
+                if (this.keyCurve.namedCurve.toLowerCase() === "ed25519") {
+                    let ec = new elliptic.eddsa("ed25519");
+                    let key = ec.keyFromSecret(privateKey);
+                    let pubPoint: any = key.getPublic("hex");
 
-            this.privateKey = await subtle.importKey(
-                "jwk",
-                importJWK,
-                this.keyCurve,
-                this.extractable,
-                this.keyUsages
-            );
-            let jwkPublic = await subtle.exportKey("jwk", this.privateKey);
-            delete jwkPublic.d;
+                    x = pubPoint.slice(0, 32);
+                    y = pubPoint.slice(32, 64);
+                }
+                importJWK = keyconvert.jwkConversion(privateKey, this.keyCurve, encoding, x, y);
+            }
+            if (!importJWK.x) throw Error(`missing stuff ${importJWK}`);
+            if (!this.privateKey) {
+                this.privateKey = await subtle.importKey(
+                    "jwk",
+                    importJWK,
+                    this.keyCurve,
+                    this.extractable,
+                    this.keyUsages
+                );
+            }
+            delete importJWK.d;
             this.publicKey = await subtle.importKey("jwk",
-                jwkPublic,
+                importJWK,
                 this.keyCurve,
                 this.extractable,
                 this.keyUsages);
