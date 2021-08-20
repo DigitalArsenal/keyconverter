@@ -1,9 +1,9 @@
 import { keyconvert, FormatOptions } from "../src/keyconvert";
 
 const curves = {
-    secp256r1: { name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" },
-    ed25519: { name: "EdDSA", namedCurve: "Ed25519", hash: "SHA-256" },
-    x25519: { name: "ECDH-ES", namedCurve: "x25519", hash: "SHA-256" }
+    secp256r1: { kty: "EC", name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" },
+    ed25519: { kty: "OKP", name: "EdDSA", namedCurve: "Ed25519", hash: "SHA-256" },
+    x25519: { kty: "OKP", name: "ECDH-ES", namedCurve: "x25519", hash: "SHA-256" }
 };
 
 let curve = curves.ed25519;
@@ -74,6 +74,8 @@ let jsonWebKeyOKP: any = {
 
 }
 
+let BTC: string = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
+
 let km = new keyconvert(curve);
 
 const runAssertions = async (type: FormatOptions) => {
@@ -94,15 +96,19 @@ const runAssertions = async (type: FormatOptions) => {
     expect(k[2]).to.be.equal(bip39mnemonic);
     expect(k[3]).to.be.equal(privateKeyWIF);
 
-    expect(jsonWebKeyOKP).to.be.eql(k[4]);
+    if (curve.kty === "OKP") {
+        expect(jsonWebKeyOKP).to.be.eql(k[4]);
+    } else if (curve.kty === "EC") {
+        expect(jsonWebKeyEC).to.be.eql(k[4]);
+    }
 
     if (PEMS[curve.namedCurve].privateKeyPEMPKCS1) {
         expect(k[5].toString().trim()).to.be.equal(PEMS[curve.namedCurve].privateKeyPEMPKCS1);
     }
     expect(k[6].toString().trim()).to.be.equal(PEMS[curve.namedCurve].privateKeyPEMPKCS8);
-    console.log(await km.exportX509Certificate({ signingAlgorithm: curve }));
-    console.log(await km.bitcoinAddress());
+    expect(k[7]).to.be.equal(BTC);
 
+    console.log(await km.exportX509Certificate({ signingAlgorithm: curve }));
     console.log(await km.export("ssh", "private"));
     console.log(await km.export("ssh", "public", `exported-from: ${type}`));
 
