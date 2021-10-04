@@ -1,10 +1,12 @@
 import { keyconvert, FormatOptions } from "../src/keyconvert";
-import createKeccakHash from 'keccak';
-
-const curves = {
-    secp256r1: { kty: "EC", name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" },
-    ed25519: { kty: "OKP", name: "EdDSA", namedCurve: "Ed25519", hash: "SHA-256" },
-    x25519: { kty: "OKP", name: "ECDH-ES", namedCurve: "x25519", hash: "SHA-256" }
+interface Map {
+    [key: string]: any | undefined
+}
+const curves: Map = {
+    "secp256k1": { kty: "EC", name: "ECDSA", namedCurve: "k-256", hash: "SHA-256" },
+    "secp256r1": { kty: "EC", name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" },
+    "ed25519": { kty: "OKP", name: "EdDSA", namedCurve: "Ed25519", hash: "SHA-256" },
+    "x25519": { kty: "OKP", name: "ECDH-ES", namedCurve: "x25519", hash: "SHA-256" }
 };
 
 let curve = curves.ed25519;
@@ -110,13 +112,16 @@ const runAssertions = async (type: FormatOptions) => {
     expect(k[6].toString().trim()).to.be.equal(PEMS[curve.namedCurve].privateKeyPEMPKCS8);
     expect(k[7]).to.be.equal(BTC);
     expect(k[8]).to.be.equal(ETH);
-    console.log(await km.exportX509Certificate({ signingAlgorithm: curve }));
+    for (let c in curves) {
+        console.log(await km.exportX509Certificate({ signingAlgorithm: curves[c] }));
+    }
+
     console.log(await km.export("ssh", "private"));
     console.log(await km.export("ssh", "public", `exported-from: ${type}`));
 
 
 }
-
+/*
 it("Imports Private Key as Mnemonic", async function () {
     await km.import(bip39mnemonic, "bip39");
     await runAssertions("bip39");
@@ -142,16 +147,16 @@ it("Imports Private Key as raw", async function () {
     await km.import(Buffer.from(privateKeyHex, 'hex'), "raw:private");
     await runAssertions("raw:private");
 });
-/*
+
 it("Imports Private Key as PEM (pkcs1)", async function () {
-    await km.import(privateKeyPEMPKCS1, "pkcs1");
+    await km.import(PEMS["K-256"].privateKeyPEMPKCS1, "pkcs1");
     await runAssertions("pkcs1");
 });
-
+*/
 it("Imports Private Key as PEM (pkcs8)", async function () {
-    await km.import(privateKeyPEMPKCS8, "pkcs8");
+    let km2 = new keyconvert(curves.secp256k1);
+    await km2.import(PEMS["K-256"].privateKeyPEMPKCS8, "pkcs8");
     await runAssertions("pkcs8");
 });
-*/
 
 //TODO loop through all key curves, difference between JWK OKP and EC
