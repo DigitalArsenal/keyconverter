@@ -1,4 +1,5 @@
 import { keyconvert, FormatOptions } from "../src/keyconvert";
+import createKeccakHash from 'keccak';
 
 const curves = {
     secp256r1: { kty: "EC", name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" },
@@ -30,7 +31,7 @@ MC4CAQAwBQYDK2VwBCIEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB
     }
 }
 
-
+//https://privatekeys.pw/key/0000000000000000000000000000000000000000000000000000000000000001
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
 let privateKeyHex = new Array(64).join("0") + "1";
 let privateKeyWIF = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
@@ -111,6 +112,9 @@ const runAssertions = async (type: FormatOptions) => {
     console.log(await km.exportX509Certificate({ signingAlgorithm: curve }));
     console.log(await km.export("ssh", "private"));
     console.log(await km.export("ssh", "public", `exported-from: ${type}`));
+    console.log(publicKeyHex["K-256"].substring(2));
+    let keccakHex = createKeccakHash('keccak256').update(Buffer.from(publicKeyHex["K-256"].substring(2), 'hex')).digest('hex');
+    console.log("ETH:", keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase());
 
 }
 
