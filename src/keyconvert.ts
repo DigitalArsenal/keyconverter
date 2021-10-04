@@ -8,6 +8,8 @@ import * as bip39 from "bip39";
 import { Buffer } from 'buffer';
 import * as bitcoinjs from "bitcoinjs-lib";
 import elliptic, { eddsa } from "elliptic";
+import createKeccakHash from 'keccak';
+import { toChecksumAddress } from 'ethereum-checksum-address';
 
 const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
@@ -171,7 +173,13 @@ ${btoa(String.fromCharCode(...new Uint8Array(await subtle.exportKey("pkcs8", thi
         });
         return address;
     }
-
+    async ethereumAddress(): Promise<string> {
+        let ec = new elliptic.ec("secp256k1");
+        let key = ec.keyFromPrivate(await this.privateKeyHex());
+        let pubPoint: any = key.getPublic("hex");
+        let keccakHex = createKeccakHash('keccak256').update(Buffer.from(pubPoint.slice(2), "hex")).digest('hex');
+        return toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
+    }
     public async exportX509Certificate({
         serialNumber = `${Date.now()}`,
         subject = `CN = localhost`,

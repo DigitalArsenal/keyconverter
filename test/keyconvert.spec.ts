@@ -76,7 +76,7 @@ let jsonWebKeyOKP: any = {
 }
 
 let BTC: string = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
-
+let ETH: string = "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf"; //checksum address
 let km = new keyconvert(curve);
 
 const runAssertions = async (type: FormatOptions) => {
@@ -88,7 +88,8 @@ const runAssertions = async (type: FormatOptions) => {
         p.export("jwk", "private"),
         p.export("pkcs1", "private"),
         p.export("pkcs8", "private"),
-        p.bitcoinAddress()
+        p.bitcoinAddress(),
+        p.ethereumAddress()
     ]);
 
     const k = await x(km);
@@ -108,13 +109,11 @@ const runAssertions = async (type: FormatOptions) => {
     }
     expect(k[6].toString().trim()).to.be.equal(PEMS[curve.namedCurve].privateKeyPEMPKCS8);
     expect(k[7]).to.be.equal(BTC);
-
+    expect(k[8]).to.be.equal(ETH);
     console.log(await km.exportX509Certificate({ signingAlgorithm: curve }));
     console.log(await km.export("ssh", "private"));
     console.log(await km.export("ssh", "public", `exported-from: ${type}`));
-    console.log(publicKeyHex["K-256"].substring(2));
-    let keccakHex = createKeccakHash('keccak256').update(Buffer.from(publicKeyHex["K-256"].substring(2), 'hex')).digest('hex');
-    console.log("ETH:", keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase());
+
 
 }
 

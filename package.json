@@ -84,6 +84,7 @@
     "bs58": "^4.0.1",
     "buffer": "^6.0.3",
     "elliptic": "^6.5.4",
+    "ethereum-checksum-address": "^0.0.7",
     "inquirer": "^8.1.1",
     "keccak": "^3.0.2",
     "ripemd160": "^2.0.2",
