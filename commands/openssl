@@ -1,0 +1,1 @@
+openssl pkey -in ./tmp/Ed25519private.pem -pubout -text

@@ -1,5 +1,5 @@
 
-import base64URL from "base64-url/index.js";
+import base64URL from "base64url";
 import * as liner from "../lib/webcrypto.liner.index.es";
 import wif from "wif";
 import * as x509 from "../lib/x509.es";
@@ -84,12 +84,21 @@ export class keyconvert {
         x?: string,
         y?: string,
     ): JsonWebKey {
+        if (curve.namedCurve.toLowerCase() === "ed25519") {
+            let ec = new elliptic.eddsa("ed25519");
+            let key = ec.keyFromSecret(prvHex);
+            let pubPoint: any = key.getPublic("hex");
+            console.log(pubPoint)
+            x = pubPoint.slice(0, 32);
+            y = pubPoint.slice(32, 64);
+            console.log(x,y)
+        }
         return {
             kty: ~curve.namedCurve.indexOf("secp") ? "EC" : "OKP",
             crv: curve.namedCurve,
-            d: base64URL.encode(prvHex, format),
-            x: base64URL.encode(x, format),
-            y: base64URL.encode(y, format)
+            d: base64URL(prvHex, format),
+            x: base64URL(x, format),
+            y: base64URL(y, format)
         };
     }
 
@@ -252,71 +261,50 @@ export class keyconvert {
             } else {
                 if (typeof privateKey === "string") {
                     if (privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
-                        for (let i = 0; i < privateKey.length; i++)console.log(privateKey[i], privateKey.charCodeAt(i))
                         let pp = x509.PemConverter.decode(privateKey);
                         this.privateKey = await subtle.importKey("pkcs8", pp[0], this.keyCurve, this.extractable, this.keyUsages);
-                        importJWK = await subtle.exportKey("jwk", this.privateKey);
-                        convert = false;
                     } else if (encoding === "bip39") {
                         privateKey = bip39.mnemonicToEntropy(privateKey);
-                        convert = false;
                     } else if (encoding === "wif") {
                         const decodedWif = wif.decode(privateKey);
                         privateKey = keyconvert.toHex(decodedWif.privateKey);
                         encoding = "hex";
-                        convert = false;
                     } else if (!encoding) {
                         throw Error(`Unknown Private Key Encoding: ${encoding} `);
                     }
                 } else if ((privateKey as JsonWebKey).d) {
-                    importJWK = Object.assign({}, privateKey);
+                    this.privateKey = await subtle.importKey(
+                        "jwk",
+                        Object.assign({}, privateKey),
+                        this.keyCurve,
+                        this.extractable,
+                        this.keyUsages
+                    );
                 } else if (!(privateKey instanceof Buffer)) {
                     throw Error(`Unknown Input: ${privateKey} `);
                 }
             }
-            if (convert) {
-                encoding = "hex";
-                privateKey = privateKey.toString("hex");
-                let x, y;
-
-                if (this.keyCurve.namedCurve.toLowerCase() === "ed25519") {
-                    let ec = new elliptic.eddsa("ed25519");
-                    let key = ec.keyFromSecret(privateKey);
-                    let pubPoint: any = key.getPublic("hex");
-
-                    x = pubPoint.slice(0, 32);
-                    y = pubPoint.slice(32, 64);
-                } else if (this.keyCurve.namedCurve.toLowerCase() === "k-256") {
-                    let ec = new elliptic.ec("secp256k1");
-                    let key = ec.keyFromPrivate(privateKey);
-                    let pubPoint: any = key.getPublic("hex");
-
-                    x = pubPoint.slice(0, 64);
-                    y = pubPoint.slice(64, 128);
-                }
-
-                importJWK = keyconvert.jwkConversion(privateKey, this.keyCurve, encoding, x, y);
-            }
-
-            if (importJWK && !importJWK.x) throw Error(`missing stuff ${importJWK} `);
 
             if (!this.privateKey) {
-                this.privateKey = await subtle.importKey(
-                    "jwk",
-                    importJWK,
+                let jwk = keyconvert.jwkConversion(privateKey, this.keyCurve, "hex");
+                this.privateKey = subtle.importKey("jwk",
+                    jwk,
                     this.keyCurve,
                     this.extractable,
-                    this.keyUsages
-                );
+                    this.keyUsages)
             }
-            if (importJWK) {
-                delete importJWK.d;
-                this.publicKey = await subtle.importKey("jwk",
-                    importJWK,
-                    this.keyCurve,
-                    this.extractable,
-                    this.keyUsages);
+            let importJWK = await subtle.exportKey("jwk", this.privateKey);
+            if (!importJWK.x) {
+                let jwk = keyconvert.jwkConversion(importJWK.d, this.keyCurve, "hex");
+                delete jwk.d;
+                importJWK = jwk;
             }
+            console.log(this.keyCurve.namedCurve, importJWK);
+            this.publicKey = await subtle.importKey("jwk",
+                importJWK,
+                this.keyCurve,
+                this.extractable,
+                this.keyUsages);
         }
 
         return;

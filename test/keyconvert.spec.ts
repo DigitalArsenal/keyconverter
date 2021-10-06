@@ -51,10 +51,10 @@ let jWKPub: any = {
     }
 }
 
-function jsonWebKeyEC(curve: any): JsonWebKey {
+function jsonWebKeyEC(cindex: string, curve: any): JsonWebKey {
     return {
         d: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE',
-        ...jWKPub[curve.namedCurve],
+        ...jWKPub[cindex],
         ext: true,
         key_ops: ['sign', 'verify', 'deriveKey', 'deriveBits'],
         crv: curve.namedCurve,
@@ -62,11 +62,11 @@ function jsonWebKeyEC(curve: any): JsonWebKey {
     };
 }
 
-function jsonWebKeyOKP(curve: any): JsonWebKey {
+function jsonWebKeyOKP(cindex: string, curve: any): JsonWebKey {
 
     return {
         d: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE',
-        ...jWKPub[curve.namedCurve],
+        ...jWKPub[cindex],
         ext: true,
         key_ops: ['sign', 'verify', 'deriveKey', 'deriveBits'],
         crv: curve.namedCurve,
@@ -78,7 +78,7 @@ function jsonWebKeyOKP(curve: any): JsonWebKey {
 let BTC: string = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
 let ETH: string = "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf"; //checksum address
 
-const runAssertions = async (type: FormatOptions, km: keyconvert) => {
+const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string) => {
 
     let curve = km.keyCurve as any;
     const x = async (p: keyconvert) => await Promise.all([
@@ -93,28 +93,25 @@ const runAssertions = async (type: FormatOptions, km: keyconvert) => {
     ]);
 
     const k = await x(km);
-    if(curve.namedCurve === "K-256")
-    console.log(JSON.stringify(k, null, 4));
-
+    
     expect(k[0]).to.be.equal(privateKeyHex);
-    expect(k[1]).to.be.equal(publicKeyHex[curve.namedCurve]);
+    expect(k[1].indexOf(publicKeyHex[cindex])).to.be.equal(0);
     expect(k[2]).to.be.equal(bip39mnemonic);
     expect(k[3]).to.be.equal(privateKeyWIF);
 
     if (curve.kty === "OKP") {
-        expect(jsonWebKeyOKP(curve)).to.be.eql(k[4]);
+        expect(jsonWebKeyOKP(cindex, curve)).to.be.eql(k[4]);
     } else if (curve.kty === "EC") {
-        expect(jsonWebKeyEC(curve)).to.be.eql(k[4]);
+        expect(jsonWebKeyEC(cindex, curve)).to.be.eql(k[4]);
+
     }
     writeFileSync(`./tmp/${curve.namedCurve}private.pem`, k[5].toString());
-    expect(k[5].toString()).to.be.equal(PEMS[curve.namedCurve].privateKeyPEMPKCS8);
+    expect(k[5].toString()).to.be.equal(PEMS[cindex].privateKeyPEMPKCS8);
     expect(k[6]).to.be.equal(BTC);
     expect(k[7]).to.be.equal(ETH);
 
     /*
-     for (let c in curves) {
-         console.log(await km.exportX509Certificate({ signingAlgorithm: curves[c] }));
-     }
+
  
      console.log(await km.export("ssh", "private"));
      console.log(await km.export("ssh", "public", `exported-from: ${type}`));
@@ -160,7 +157,7 @@ for (let c in curves) {
     it(`Imports Private Key as PEM (pkcs8): ${c}`, async function () {
         if (PEMS[c]) {
             await km.import(PEMS[c].privateKeyPEMPKCS8, "pkcs8");
-            await runAssertions("pkcs8", km);
+            await runAssertions("pkcs8", km, c);
         }
     });
 
