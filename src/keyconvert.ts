@@ -238,6 +238,7 @@ export class keyconvert {
     public async import(privateKey: string, encoding?: FormatOptions): Promise<void>;
     public async import(privateKey: CryptoKey): Promise<void>;
     public async import(privateKey: any, encoding?: FormatOptions): Promise<void> {
+
         let convert: Boolean = true;
         let importJWK: JsonWebKey;
 
@@ -251,16 +252,19 @@ export class keyconvert {
             } else {
                 if (typeof privateKey === "string") {
                     if (privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
+                        for (let i = 0; i < privateKey.length; i++)console.log(privateKey[i], privateKey.charCodeAt(i))
                         let pp = x509.PemConverter.decode(privateKey);
                         this.privateKey = await subtle.importKey("pkcs8", pp[0], this.keyCurve, this.extractable, this.keyUsages);
                         importJWK = await subtle.exportKey("jwk", this.privateKey);
-
+                        convert = false;
                     } else if (encoding === "bip39") {
                         privateKey = bip39.mnemonicToEntropy(privateKey);
+                        convert = false;
                     } else if (encoding === "wif") {
                         const decodedWif = wif.decode(privateKey);
                         privateKey = keyconvert.toHex(decodedWif.privateKey);
                         encoding = "hex";
+                        convert = false;
                     } else if (!encoding) {
                         throw Error(`Unknown Private Key Encoding: ${encoding} `);
                     }
