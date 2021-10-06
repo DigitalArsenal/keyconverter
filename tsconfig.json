@@ -5,7 +5,7 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "noImplicitAny": true,
-        "target": "es6",
+        "target": "es2021",
         "allowJs": true,
         "sourceMap": true,
         "esModuleInterop": true,
