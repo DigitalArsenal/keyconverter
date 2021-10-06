@@ -42,7 +42,8 @@
     "build:types": "tsc -p tsconfig.json --outDir build/types --declaration --emitDeclarationOnly",
     "build:openssl:cert": "cd ./scripts/openssl_certs && ./certs.sh",
     "test": "mocha -s 300 --require ./test/scripts/chai-setup.js",
-    "test:dev": "env DEV=true mocha -s 300 --require ./test/scripts/chai-setup.js -w --watch-files ./src/**/*,./test/**.*"
+    "test:dev": "env DEV=true mocha -s 300 --require ./test/scripts/chai-setup.js -w --watch-files ./src/**/*,./test/**.*",
+    "dev:test": "npm run test:dev"
   },
   "devDependencies": {
     "@babel/plugin-transform-spread": "^7.14.6",
