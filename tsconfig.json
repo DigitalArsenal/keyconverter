@@ -4,7 +4,7 @@
         "outDir": "./build",
         "module": "commonjs",
         "moduleResolution": "node",
-        "noImplicitAny": true,
+        "noImplicitAny": false,
         "target": "es2021",
         "allowJs": true,
         "sourceMap": true,

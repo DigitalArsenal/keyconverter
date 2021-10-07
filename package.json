@@ -43,7 +43,8 @@
     "build:openssl:cert": "cd ./scripts/openssl_certs && ./certs.sh",
     "test": "mocha -s 300 --require ./test/scripts/chai-setup.js",
     "test:dev": "env DEV=true mocha -s 300 --require ./test/scripts/chai-setup.js -w --watch-files ./src/**/*,./test/**.*",
-    "dev:test": "npm run test:dev"
+    "dev:test": "npm run test:dev",
+    "build": "rollup -c"
   },
   "devDependencies": {
     "@babel/plugin-transform-spread": "^7.14.6",
@@ -73,6 +74,7 @@
     "karma-typescript-es6-transform": "^5.5.1",
     "mocha": "^9.0.1",
     "rollup": "^2.53.1",
+    "rollup-plugin-terser": "^7.0.2",
     "ts-node": "^10.0.0",
     "typescript": "latest"
   },

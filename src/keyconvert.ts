@@ -2,7 +2,17 @@
 import base64URL from "base64url";
 import * as liner from "../lib/webcrypto.liner.index.es";
 import wif from "wif";
-import * as x509 from "../lib/x509.es";
+import {
+    EcAlgorithm,
+    PemConverter,
+    cryptoProvider,
+    KeyUsageFlags,
+    BasicConstraintsExtension,
+    SubjectKeyIdentifierExtension,
+    AuthorityKeyIdentifierExtension,
+    KeyUsagesExtension,
+    X509CertificateGenerator
+} from "../lib/x509.es";
 import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { Buffer } from 'buffer';
@@ -13,7 +23,6 @@ import { toChecksumAddress } from 'ethereum-checksum-address';
 import { generateKeyPair } from 'curve25519-js';
 import { Convert } from "pvtsutils";
 const { FromHex } = Convert;
-const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
 
 const { crypto: linerCrypto } = liner;
@@ -144,7 +153,7 @@ export class keyconvert {
                 let xx = await subtle.exportKey("pkcs8", _type === "public" ? this.publicKey : this.privateKey,
                     tt
                 );
-                let pkcs8 = x509.PemConverter.encode(xx, tt);
+                let pkcs8 = PemConverter.encode(xx, tt);
                 if (encoding === "pkcs8" && type !== "public") {
                     return pkcs8;
                 } else if (~["secp256r1", "ed25519"].indexOf(namedCurve)) {
@@ -222,21 +231,21 @@ export class keyconvert {
         encoding?: string;
     } = {}): Promise<string> {
 
-        x509.cryptoProvider.set(liner.crypto);
+        cryptoProvider.set(liner.crypto);
 
-        let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
+        let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = KeyUsageFlags;
 
         if (!extensions) {
             extensions =
                 [
-                    new x509.BasicConstraintsExtension(true, 2, true),
-                    await x509.SubjectKeyIdentifierExtension.create(this.publicKey),
-                    await x509.AuthorityKeyIdentifierExtension.create(this.publicKey),
-                    new x509.KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)
+                    new BasicConstraintsExtension(true, 2, true),
+                    await SubjectKeyIdentifierExtension.create(this.publicKey),
+                    await AuthorityKeyIdentifierExtension.create(this.publicKey),
+                    new KeyUsagesExtension(digitalSignature | nonRepudiation | keyEncipherment | dataEncipherment, true)
                 ];
         };
 
-        const cert = x509.X509CertificateGenerator.create({
+        const cert = X509CertificateGenerator.create({
             serialNumber,
             subject,
             issuer,
@@ -270,7 +279,7 @@ export class keyconvert {
             } else {
                 if (typeof privateKey === "string") {
                     if (encoding.match(/pkcs/) || privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
-                        let pp = x509.PemConverter.decode(privateKey);
+                        let pp = PemConverter.decode(privateKey);
                         this.privateKey = await subtle.importKey("pkcs8", pp[0], this.keyCurve, this.extractable, this.keyUsages);
                         const exportedPrivateKey: JsonWebKey = await subtle.exportKey("jwk", this.privateKey);
                         privateKey = base64URL.decode(exportedPrivateKey.d, "hex");
