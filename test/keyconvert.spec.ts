@@ -110,9 +110,8 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
         expect(k[x]).to.be.eql(harness[x]);
     }
 
-   // console.log(await km.export("ssh", "private"));
-   // console.log(await km.export("ssh", "public", `exported-from: ${type}`));
-
+    // console.log(await km.export("ssh", "private"));
+    // console.log(await km.export("ssh", "public", `exported-from: ${type}`));
 
 };
 
@@ -121,28 +120,28 @@ for (let c in curves) {
     let km = new keyconvert(curve);
     let harness = JSON.parse(readFileSync(`./test/check/${c}.json`, 'utf-8'));
 
-    it("Imports Private Key as raw", async function () {
+    it(`Imports Private Key as raw: ${c}`, async function () {
         await km.import(Buffer.from(privateKeyHex, 'hex'), "raw:private");
         await runAssertions("raw:private", km, c, harness);
     });
 
-    it("Imports Private Key as Mnemonic", async function () {
+    it(`Imports Private Key as Mnemonic: ${c}`, async function () {
         await km.import(harness[2], "bip39");
         await runAssertions("bip39", km, c, harness);
     });
 
-    it("Imports Private Key as WIF", async function () {
+    it(`Imports Private Key as WIF: ${c}`, async function () {
         await km.import(harness[3], "wif");
         await runAssertions("wif", km, c, harness);
     });
 
-    it("Imports Private Key as hex string", async function () {
+    it(`Imports Private Key as hex string: ${c}`, async function () {
         await km.import(harness[0], "hex");
         await runAssertions("hex", km, c, harness);
 
     });
 
-    it("Imports Private Key as JsonWebKey", async function () {
+    it(`Imports Private Key as JsonWebKey: ${c}`, async function () {
         await km.import(harness[4], "jwk");
         await runAssertions("jwk", km, c, harness);
     });
