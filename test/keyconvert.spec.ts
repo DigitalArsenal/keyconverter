@@ -1,8 +1,14 @@
 import { keyconvert, FormatOptions } from "../src/keyconvert";
-import { writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { curve } from "elliptic";
+var dir = './tmp';
+
+if (!existsSync(dir)) {
+    mkdirSync(dir);
+};
+
 interface Map {
-    [key: string]: any | undefined
+    [key: string]: any | undefined;
 }
 const curves: Map = {
     "secp256k1": { kty: "EC", name: "ECDSA", namedCurve: "K-256", hash: "SHA-256" },
@@ -29,18 +35,19 @@ MC4CAQAwBQYDK2VwBCIEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB
 MC4CAQAwBQYDK2VwBCIEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB
 -----END PRIVATE KEY-----`
     }
-}
+};
 
 //https://privatekeys.pw/key/0000000000000000000000000000000000000000000000000000000000000001
 let bip39mnemonic = `abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon diesel`;
-let privateKeyHex = new Array(64).join("0") + "1";
+let privateKeyHex = "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a";//new Array(64).join("0") + "1";
 let privateKeyWIF = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
 
 let publicKeyHex: any = {
-    "secp256k1": "0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8",
+    "secp256k1": "045b7032d9b3955e59dfdfc1d56860dc971495246ac027eab148699210e66607ac6a8d9d47d313698480e565ee1f18e99683d6ed7a6fbd1e9de68f4dea053898c0",
     "secp256r1": "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5",
-    "ed25519": "4cb5abf6ad79fbf5abbccafcc269d85c"
-}
+    "ed25519": "4cb5abf6ad79fbf5abbccafcc269d85c",
+    "x25519": "fd3384e132ad02a56c78f45547ee4003"
+};
 
 let jWKPub: any = {
     "secp256k1": {
@@ -54,7 +61,7 @@ let jWKPub: any = {
     "ed25519": {
         x: 'TLWr9q15-_WrvMr8wmnYXA'
     }
-}
+};
 
 function jsonWebKeyEC(cindex: string, curve: any): JsonWebKey {
     return {
@@ -77,13 +84,13 @@ function jsonWebKeyOKP(cindex: string, curve: any): JsonWebKey {
         crv: curve.namedCurve,
         kty: 'OKP'
 
-    }
+    };
 }
 
 let BTC: string = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
 let ETH: string = "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf"; //checksum address
 
-const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string) => {
+const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string, harness: any) => {
 
     let curve = km.keyCurve as any;
     const x = async (p: keyconvert) => await Promise.all([
@@ -99,70 +106,51 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
 
     const k = await x(km);
 
-    expect(k[0]).to.be.equal(privateKeyHex);
-    expect(k[1].indexOf(publicKeyHex[cindex])).to.be.equal(0);
-    expect(k[2]).to.be.equal(bip39mnemonic);
-    expect(k[3]).to.be.equal(privateKeyWIF);
-
-    if (curve.kty === "OKP") {
-        expect(jsonWebKeyOKP(cindex, curve)).to.be.eql(k[4]);
-    } else if (curve.kty === "EC") {
-        expect(jsonWebKeyEC(cindex, curve)).to.be.eql(k[4]);
-
+    for (let x = 0; x < harness.length; x++) {
+        expect(k[x]).to.be.eql(harness[x]);
     }
-    writeFileSync(`./tmp/${curve.namedCurve}private.pem`, k[5].toString());
-    expect(k[5].toString()).to.be.equal(PEMS[cindex].privateKeyPEMPKCS8);
-    expect(k[6]).to.be.equal(BTC);
-    expect(k[7]).to.be.equal(ETH);
 
-    /*
+   // console.log(await km.export("ssh", "private"));
+   // console.log(await km.export("ssh", "public", `exported-from: ${type}`));
 
- 
-     console.log(await km.export("ssh", "private"));
-     console.log(await km.export("ssh", "public", `exported-from: ${type}`));
- 
-     */
-}
+
+};
 
 for (let c in curves) {
     let curve = curves[c];
     let km = new keyconvert(curve);
-    /* it("Imports Private Key as Mnemonic", async function () {
-     await km.import(bip39mnemonic, "bip39");
-     await runAssertions("bip39", km);
- });
+    let harness = JSON.parse(readFileSync(`./test/check/${c}.json`, 'utf-8'));
 
- it("Imports Private Key as WIF", async function () {
-     await km.import(privateKeyWIF, "wif");
-     await runAssertions("wif", km);
- });
+    it("Imports Private Key as raw", async function () {
+        await km.import(Buffer.from(privateKeyHex, 'hex'), "raw:private");
+        await runAssertions("raw:private", km, c, harness);
+    });
 
- it("Imports Private Key as hex string", async function () {
-     await km.import(privateKeyHex, "hex");
-     await runAssertions("hex", km);
+    it("Imports Private Key as Mnemonic", async function () {
+        await km.import(harness[2], "bip39");
+        await runAssertions("bip39", km, c, harness);
+    });
 
- });
+    it("Imports Private Key as WIF", async function () {
+        await km.import(harness[3], "wif");
+        await runAssertions("wif", km, c, harness);
+    });
 
-     it("Imports Private Key as JsonWebKey", async function () {
-         let JWK: JsonWebKey;
-         if (curve.kty === "OKP") {
-             JWK = jsonWebKeyOKP(curve);
-         } else if (curve.kty === "EC") {
-             JWK = jsonWebKeyEC(curve);
-         }
-         await km.import(JWK as any, "jwk");
-         await runAssertions("jwk", km);
-     });
- 
-     it("Imports Private Key as raw", async function () {
-         await km.import(Buffer.from(privateKeyHex, 'hex'), "raw:private");
-         await runAssertions("raw:private", km);
-     });*/
+    it("Imports Private Key as hex string", async function () {
+        await km.import(harness[0], "hex");
+        await runAssertions("hex", km, c, harness);
+
+    });
+
+    it("Imports Private Key as JsonWebKey", async function () {
+        await km.import(harness[4], "jwk");
+        await runAssertions("jwk", km, c, harness);
+    });
 
     it(`Imports Private Key as PEM (pkcs8): ${c}`, async function () {
         if (PEMS[c]) {
-            await km.import(PEMS[c].privateKeyPEMPKCS8, "pkcs8");
-            await runAssertions("pkcs8", km, c);
+            await km.import(harness[5], "pkcs8");
+            await runAssertions("pkcs8", km, c, harness);
         }
     });
 

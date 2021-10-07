@@ -6,7 +6,7 @@ import * as x509 from "../lib/x509.es";
 import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { Buffer } from 'buffer';
-import * as bitcoinjs from "bitcoinjs-lib";
+import { ECPair, payments } from "bitcoinjs-lib";
 import elliptic, { eddsa } from "elliptic";
 import createKeccakHash from 'keccak';
 import { toChecksumAddress } from 'ethereum-checksum-address';
@@ -57,7 +57,7 @@ type KeyUsageOptions = "encrypt" | "decrypt" | "sign" | "verify" | "deriveKey" |
 
 type ExtendedCryptoKey = {
     data: any;
-}
+};
 
 export class keyconvert {
     privateKey: CryptoKey;
@@ -94,18 +94,19 @@ export class keyconvert {
             x = pubPoint.slice(0, 32);
             y = pubPoint.slice(32, 64);
         } else if (namedCurve === "x25519") {
-            console.log(x, y, prvHex, new Array(64).join("0") + "1");
             let keys = generateKeyPair(Buffer.from(prvHex, "hex"));
             //fd3384e132ad02a56c78f45547ee40038dc79002b90d29ed90e08eee762ae715
-            console.log(this.toHex(keys.public));
+            let pubPoint: any = this.toHex(keys.public);
+            x = pubPoint.slice(0, 32);
+            y = pubPoint.slice(32, 64);
         }
 
         return {
             kty: ~namedCurve.indexOf("secp") ? "EC" : "OKP",
             crv: namedCurve,
             d: base64URL(prvHex, format),
-            x: base64URL(x, format),
-            y: base64URL(y, format)
+            x: x ? base64URL(x, format) : null,
+            y: y ? base64URL(y, format) : null
         };
     }
 
@@ -118,6 +119,7 @@ export class keyconvert {
     }
 
     async export(encoding: FormatOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string> {
+        let namedCurve = this.keyCurve.namedCurve.toLowerCase();
         if (this.privateKey === undefined) {
             throw Error("No Private Key");
         } else {
@@ -145,12 +147,12 @@ export class keyconvert {
                 let pkcs8 = x509.PemConverter.encode(xx, tt);
                 if (encoding === "pkcs8" && type !== "public") {
                     return pkcs8;
-                } else if (this.keyCurve.namedCurve.toLowerCase() === "secp256k1") {
-                    throw Error(`Cannot export ${this.keyCurve.namedCurve} as SSH Public Key.`)
-                } else {
+                } else if (~["secp256r1", "ed25519"].indexOf(namedCurve)) {
                     let sshkey = sshpk.parsePrivateKey(pkcs8, "pkcs8");
                     sshkey.comment = comment;
                     return sshkey.toPublic().toString("ssh");
+                } else {
+                    throw Error(`Cannot export ${namedCurve} as SSH Public Key.`);
                 }
             } else if (encoding === "jwk") {
                 let publicKey = await subtle.exportKey(encoding, this.publicKey);
@@ -183,8 +185,8 @@ export class keyconvert {
 
     async bitcoinAddress(): Promise<string> {
 
-        const bjsKeyPair = bitcoinjs.ECPair.fromWIF((await this.export("wif", "private")).toString());
-        const { address } = bitcoinjs.payments.p2pkh({
+        const bjsKeyPair = ECPair.fromWIF((await this.export("wif", "private")).toString());
+        const { address } = payments.p2pkh({
             pubkey: bjsKeyPair.publicKey,
         });
         return address;
@@ -217,7 +219,7 @@ export class keyconvert {
         publicKey?: CryptoKey,
         signingKey?: CryptoKey,
         extensions?: any[],
-        encoding?: string
+        encoding?: string;
     } = {}): Promise<string> {
 
         x509.cryptoProvider.set(liner.crypto);
@@ -264,7 +266,7 @@ export class keyconvert {
             this.privateKey = privateKey;
         } else {
             if (~["raw", "raw:private", undefined].indexOf(encoding)) {
-                convert = true;
+                privateKey = keyconvert.toHex(privateKey);
             } else {
                 if (typeof privateKey === "string") {
                     if (encoding.match(/pkcs/) || privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
@@ -296,15 +298,14 @@ export class keyconvert {
 
             if (!this.privateKey) {
                 let jwk = keyconvert.jwkConversion(privateKey, this.keyCurve, "hex");
-                this.privateKey = subtle.importKey("jwk",
+                this.privateKey = await subtle.importKey("jwk",
                     jwk,
                     this.keyCurve,
                     this.extractable,
-                    this.keyUsages)
+                    this.keyUsages);
             }
 
             let importJWK = await subtle.exportKey("jwk", this.privateKey);
-
             if (!importJWK.x) {
                 const exportedPrivateKey: JsonWebKey = await subtle.exportKey("jwk", this.privateKey);
                 privateKey = base64URL.toBuffer(exportedPrivateKey.d);
