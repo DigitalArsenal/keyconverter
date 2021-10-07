@@ -10,7 +10,9 @@ import * as bitcoinjs from "bitcoinjs-lib";
 import elliptic, { eddsa } from "elliptic";
 import createKeccakHash from 'keccak';
 import { toChecksumAddress } from 'ethereum-checksum-address';
-
+import { generateKeyPair } from 'curve25519-js';
+import { Convert } from "pvtsutils";
+const { FromHex } = Convert;
 const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
 
@@ -84,18 +86,23 @@ export class keyconvert {
         x?: string,
         y?: string,
     ): JsonWebKey {
-        if (curve.namedCurve.toLowerCase() === "ed25519") {
+        let namedCurve = curve.namedCurve.toLowerCase();
+        if (namedCurve === "ed25519") {
             let ec = new elliptic.eddsa("ed25519");
             let key = ec.keyFromSecret(prvHex);
             let pubPoint: any = key.getPublic("hex");
-            console.log(pubPoint)
             x = pubPoint.slice(0, 32);
             y = pubPoint.slice(32, 64);
-            console.log(x,y)
+        } else if (namedCurve === "x25519") {
+            console.log(x, y, prvHex, new Array(64).join("0") + "1");
+            let keys = generateKeyPair(Buffer.from(prvHex, "hex"));
+            //fd3384e132ad02a56c78f45547ee40038dc79002b90d29ed90e08eee762ae715
+            console.log(this.toHex(keys.public));
         }
+
         return {
-            kty: ~curve.namedCurve.indexOf("secp") ? "EC" : "OKP",
-            crv: curve.namedCurve,
+            kty: ~namedCurve.indexOf("secp") ? "EC" : "OKP",
+            crv: namedCurve,
             d: base64URL(prvHex, format),
             x: base64URL(x, format),
             y: base64URL(y, format)
@@ -260,9 +267,11 @@ export class keyconvert {
                 convert = true;
             } else {
                 if (typeof privateKey === "string") {
-                    if (privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
+                    if (encoding.match(/pkcs/) || privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
                         let pp = x509.PemConverter.decode(privateKey);
                         this.privateKey = await subtle.importKey("pkcs8", pp[0], this.keyCurve, this.extractable, this.keyUsages);
+                        const exportedPrivateKey: JsonWebKey = await subtle.exportKey("jwk", this.privateKey);
+                        privateKey = base64URL.decode(exportedPrivateKey.d, "hex");
                     } else if (encoding === "bip39") {
                         privateKey = bip39.mnemonicToEntropy(privateKey);
                     } else if (encoding === "wif") {
@@ -293,13 +302,17 @@ export class keyconvert {
                     this.extractable,
                     this.keyUsages)
             }
+
             let importJWK = await subtle.exportKey("jwk", this.privateKey);
+
             if (!importJWK.x) {
-                let jwk = keyconvert.jwkConversion(importJWK.d, this.keyCurve, "hex");
+                const exportedPrivateKey: JsonWebKey = await subtle.exportKey("jwk", this.privateKey);
+                privateKey = base64URL.toBuffer(exportedPrivateKey.d);
+                let jwk = keyconvert.jwkConversion(privateKey.toString("hex"), this.keyCurve, "hex");
                 delete jwk.d;
                 importJWK = jwk;
             }
-            console.log(this.keyCurve.namedCurve, importJWK);
+
             this.publicKey = await subtle.importKey("jwk",
                 importJWK,
                 this.keyCurve,

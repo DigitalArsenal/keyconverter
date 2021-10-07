@@ -23,6 +23,11 @@ AAAAAAAAAAAAAAAAAAAAAAGhRANCAAR5vmZ++dy7rFWgYpXOhwsHApv82y3OKNlZ
         privateKeyPEMPKCS8: `-----BEGIN PRIVATE KEY-----
 MC4CAQAwBQYDK2VwBCIEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB
 -----END PRIVATE KEY-----`
+    },
+    "x25519": {
+        privateKeyPEMPKCS8: `-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB
+-----END PRIVATE KEY-----`
     }
 }
 
@@ -93,7 +98,7 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
     ]);
 
     const k = await x(km);
-    
+
     expect(k[0]).to.be.equal(privateKeyHex);
     expect(k[1].indexOf(publicKeyHex[cindex])).to.be.equal(0);
     expect(k[2]).to.be.equal(bip39mnemonic);
