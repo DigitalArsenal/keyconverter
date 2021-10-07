@@ -89,6 +89,8 @@
     "ethereum-checksum-address": "^0.0.7",
     "inquirer": "^8.1.1",
     "keccak": "^3.0.2",
+    "libp2p-crypto": "^0.19.7",
+    "peer-id": "^0.15.3",
     "ripemd160": "^2.0.2",
     "sshpk": "^1.16.1",
     "webcrypto-liner": "github:DigitalArsenal/webcrypto-liner#DA_change_crypto_providers",

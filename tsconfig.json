@@ -1,34 +1,20 @@
 {
-    "compileOnSave": false,
-    "compilerOptions": {
-        "outDir": "./build",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "noImplicitAny": true,
-        "target": "es2021",
-        "allowJs": true,
-        "sourceMap": true,
-        "esModuleInterop": true,
-        "types": [
-            "mocha",
-            "expect.js"
-        ],
-        "typeRoots": [
-            "./src/@types",
-            "./node_modules/@types"
-        ],
-        "paths": {
-            "*": [
-                "./*",
-                "./src/@types/*",
-            ]
-        }
-    },
-    "include": [
-        "src/**/*.ts",
-        "test/**/*.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
+  "compileOnSave": false,
+  "compilerOptions": {
+    "outDir": "./build",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "target": "es2021",
+    "allowJs": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "types": ["mocha", "expect.js"],
+    "typeRoots": ["./src/@types", "./node_modules/@types"],
+    "paths": {
+      "*": ["./*", "./src/@types/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules"]
 }
