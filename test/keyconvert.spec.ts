@@ -1,6 +1,6 @@
 import { keyconvert, FormatOptions } from "../src/keyconvert";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
-import { curve } from "elliptic";
+
 var dir = "./tmp";
 
 if (!existsSync(dir)) {
