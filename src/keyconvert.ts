@@ -12,6 +12,14 @@ import { toChecksumAddress } from "ethereum-checksum-address";
 import { generateKeyPair } from "curve25519-js";
 import { Convert } from "pvtsutils";
 import PeerId from "peer-id";
+import protobufjs from "protobufjs";
+import { existsSync } from "fs";
+import { readFile, writeFile } from "fs/promises";
+import crypto from "libp2p-crypto";
+import CID from 'cids';
+import { base58btc } from 'multiformats/bases/base58';
+import multihash from "multihashes";
+
 const { FromHex } = Convert;
 const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
@@ -182,6 +190,16 @@ export class keyconvert {
     return pID;
   }
 
+  async ipnsCID(): Promise<String> {
+    if (this.keyCurve.namedCurve !== "K-256") return "";
+    crypto.keys.supportedKeys.ed25519
+    let key = new crypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from(await this.publicKeyHex(), "hex"));
+    console.log(key);
+    let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
+
+    //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
+    return cID;
+  }
   async bitcoinAddress(): Promise<string> {
     const bjsKeyPair = ECPair.fromWIF((await this.export("wif", "private")).toString());
     const { address } = payments.p2pkh({
