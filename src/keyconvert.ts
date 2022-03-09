@@ -142,9 +142,9 @@ export class keyconvert {
         }
       } else if (~["ssh", "pkcs8"].indexOf(encoding)) {
         let _type = type === "public" ? "public" : "private";
-        let tt = `${_type} key`;
-        let xx = await subtle.exportKey("pkcs8", _type === "public" ? this.publicKey : this.privateKey, tt);
-        let pkcs8 = x509.PemConverter.encode(xx, tt);
+        let _keyType = `${_type} key`;
+        let exportedKey = await subtle.exportKey("pkcs8", _type === "public" ? this.publicKey : this.privateKey, _keyType);
+        let pkcs8 = x509.PemConverter.encode(exportedKey, _keyType);
         if (encoding === "pkcs8" && type !== "public") {
           return pkcs8;
         } else if (~["secp256r1", "ed25519"].indexOf(namedCurve)) {
@@ -192,12 +192,9 @@ export class keyconvert {
 
   async ipnsCID(): Promise<String> {
     if (this.keyCurve.namedCurve !== "K-256") return "";
-    crypto.keys.supportedKeys.ed25519
-    let key = new crypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from(await this.publicKeyHex(), "hex"));
-    console.log(key);
-    let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
-
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
+    let key = new crypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from(await this.publicKeyHex(), "hex"));
+    let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
     return cID;
   }
   async bitcoinAddress(): Promise<string> {
