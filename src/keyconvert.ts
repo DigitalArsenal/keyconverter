@@ -5,20 +5,17 @@ import * as x509 from "../lib/x509.es";
 import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { Buffer } from "buffer";
-import { ECPair, payments } from "bitcoinjs-lib";
-import elliptic, { eddsa } from "elliptic";
-import createKeccakHash from "keccak";
-import { toChecksumAddress } from "ethereum-checksum-address";
+import elliptic from "elliptic";
 import { generateKeyPair } from "curve25519-js";
 import { Convert } from "pvtsutils";
 import PeerId from "peer-id";
 import protobufjs from "protobufjs";
-import { existsSync } from "fs";
-import { readFile, writeFile } from "fs/promises";
-import crypto from "libp2p-crypto";
+import crypto, { PrivateKey } from "libp2p-crypto";
+let { secp256k1 } = crypto.keys.supportedKeys;
 import CID from 'cids';
 import { base58btc } from 'multiformats/bases/base58';
 import multihash from "multihashes";
+import { atob } from "buffer";
 
 const { FromHex } = Convert;
 const { EcAlgorithm } = x509;
@@ -37,7 +34,7 @@ let { subtle } = linerCrypto;
  * 
  */
 
-export type FormatOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "raw:private";
+export type FormatOptions = KeyFormat | BufferEncoding | "wif" | "bip39" | "ssh" | "raw:private" | "ipfs:protobuf";
 
 /**
  * @type
@@ -97,7 +94,6 @@ export class keyconvert {
       y = pubPoint.slice(32, 64);
     } else if (namedCurve === "x25519") {
       let keys = generateKeyPair(Buffer.from(prvHex, "hex"));
-      //fd3384e132ad02a56c78f45547ee40038dc79002b90d29ed90e08eee762ae715
       let pubPoint: any = this.toHex(keys.public);
       x = pubPoint.slice(0, 32);
       y = pubPoint.slice(32, 64);
@@ -126,7 +122,13 @@ export class keyconvert {
       throw Error("No Private Key");
     } else {
       const _hex = type === "private" ? await this.privateKeyHex() : await this.publicKeyHex();
-      if (encoding === "hex") {
+      if (encoding === "ipfs:protobuf") {
+        if (this.keyCurve.namedCurve != "K-256") return Buffer.from("");
+        let pP = [Buffer.from(await this.publicKeyHex(), "hex"), Buffer.from(await this.privateKeyHex(), "hex")];
+        let key = type === "public" ? pP[0] : pP[1];
+        let keyToExport = new crypto.keys.supportedKeys.secp256k1[type === "public" ? "Secp256k1PublicKey" : "Secp256k1PrivateKey"](key, pP[0]);
+        return crypto.keys[`marshal${type === "public" ? "Public" : "Private"}Key`](keyToExport as any, "secp256k1");
+      } else if (encoding === "hex") {
         return _hex;
       } else if (encoding === "bip39") {
         if (type === "public") {
@@ -197,22 +199,7 @@ export class keyconvert {
     let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
     return cID;
   }
-  async bitcoinAddress(): Promise<string> {
-    const bjsKeyPair = ECPair.fromWIF((await this.export("wif", "private")).toString());
-    const { address } = payments.p2pkh({
-      pubkey: bjsKeyPair.publicKey
-    });
-    return address;
-  }
-  async ethereumAddress(): Promise<string> {
-    let ec = new elliptic.ec("secp256k1");
-    let key = ec.keyFromPrivate(await this.privateKeyHex());
-    let pubPoint: any = key.getPublic("hex");
-    let keccakHex = createKeccakHash("keccak256")
-      .update(Buffer.from(pubPoint.slice(2), "hex"))
-      .digest("hex");
-    return toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
-  }
+
   public async exportX509Certificate({
     serialNumber = `${Date.now()} `,
     subject = `CN = localhost`,
@@ -236,6 +223,8 @@ export class keyconvert {
     extensions?: any[];
     encoding?: string;
   } = {}): Promise<string> {
+
+    if (!~["K-256", "P-256"].indexOf(this.keyCurve.namedCurve)) return "";
     x509.cryptoProvider.set(liner.crypto);
 
     let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
@@ -269,10 +258,36 @@ export class keyconvert {
   public async import(privateKey: string, encoding?: FormatOptions): Promise<void>;
   public async import(privateKey: CryptoKey): Promise<void>;
   public async import(privateKey: any, encoding?: FormatOptions): Promise<void> {
-    let convert: Boolean = true;
-    let importJWK: JsonWebKey;
 
     this.privateKey = undefined;
+    let tt = encoding;
+    if (encoding === "ipfs:protobuf") {
+      try {
+        const ipfsKey = await protobufjs.parse(`
+        syntax = "proto2";
+
+        enum KeyType {
+          RSA = 0;
+          Ed25519 = 1;
+          Secp256k1 = 2;
+          ECDSA = 3;
+        }
+
+        message PublicKey {
+          required KeyType Type = 1;
+          required bytes Data = 2;
+        }
+
+        message PrivateKey {
+          required KeyType Type = 1;
+          required bytes Data = 2;
+        }`).root;
+        privateKey = (ipfsKey.lookupType("PrivateKey").decode(privateKey) as any).Data;
+        encoding = "raw:private";
+      } catch (e) {
+        console.log(e)
+      }
+    }
 
     if (privateKey instanceof CryptoKey) {
       this.privateKey = privateKey;
