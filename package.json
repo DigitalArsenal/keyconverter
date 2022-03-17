@@ -42,8 +42,8 @@
     "build:types": "tsc -p tsconfig.json --outDir build/types --declaration --emitDeclarationOnly",
     "build": "rollup -c",
     "build:openssl:cert": "cd ./scripts/openssl_certs && ./certs.sh",
-    "test": "mocha -s 300 --require ./test/scripts/chai-setup.js",
-    "test:dev": "env DEV=true mocha -s 300 --require ./test/scripts/chai-setup.js -w --watch-files ./src/**/*,./test/**.*",
+    "test": "export NODE_OPTIONS=--openssl-legacy-provider && mocha -s 300 --require ./test/scripts/chai-setup.js",
+    "test:dev": "export NODE_OPTIONS=--openssl-legacy-provider && env DEV=true mocha -s 300 --require ./test/scripts/chai-setup.js -w --watch-files ./src/**/*,./test/**.*",
     "dev:test": "npm run test:dev"
   },
   "devDependencies": {

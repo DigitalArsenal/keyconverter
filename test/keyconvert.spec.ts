@@ -61,7 +61,7 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
       p.export("pkcs8", "private"),
       bitcoinAddress((await p.export("wif", "private")) as string),
       ethereumAddress((await p.privateKeyHex()) as string),
-      p.ipfsPeerID(),
+      (p.ipfsPeerID()).then(pID => pID.toString()),
       p.ipnsCID(),
       p.export("ipfs:protobuf", "private"),
       p.export("ipfs:protobuf", "public"),
@@ -69,7 +69,9 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
 
   const k = await x(km);
   try {
-    console.log(k[10], k[11]);
+    // console.log(
+    //   JSON.stringify(k[10]),
+    //   JSON.stringify(k[11]), type);
   } catch (e) {
 
   }
@@ -77,9 +79,10 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
   let lastDate = new Date(todaysDate.setFullYear(todaysDate.getFullYear() + 1));
 
   for (let x = 0; x < harness.length; x++) {
-    expect(k[x]).to.be.eql(harness[x]);
+    let toCompare: any = harness[x].type === "Buffer" ? Buffer.from(harness[x].data) : harness[x];
+    let fromCompare: any = k[x];
+    expect(fromCompare).to.be.eql(toCompare);
   }
-  expect(k[8].toString()).to.be.eql(peerIDString);
 
   if (km.keyCurve.namedCurve === "K-256") {
     let protoBufKey = await readFile("./test_content/secp256k1.protobuf.key");
