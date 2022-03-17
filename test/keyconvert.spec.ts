@@ -68,13 +68,7 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
     ]);
 
   const k = await x(km);
-  try {
-    // console.log(
-    //   JSON.stringify(k[10]),
-    //   JSON.stringify(k[11]), type);
-  } catch (e) {
-
-  }
+  
   let todaysDate = new Date();
   let lastDate = new Date(todaysDate.setFullYear(todaysDate.getFullYear() + 1));
 
