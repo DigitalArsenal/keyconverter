@@ -1,4 +1,4 @@
 ## TODO:
 
-- [ ] Finish integrating ETH address
-- [ ] Integrate IPFS / IPNS hashes
+- [x] Finish integrating ETH address
+- [x] Integrate IPFS / IPNS hashes
