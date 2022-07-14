@@ -2,10 +2,14 @@ import { keyconvert, FormatOptions } from "../src/keyconvert";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { readFile } from "fs/promises";
 import { exec, execSync } from "child_process";
-import { ECPair, payments } from "bitcoinjs-lib";
+import { payments } from "bitcoinjs-lib";
+import { Signer, SignerAsync, ECPairInterface, ECPairFactory, ECPairAPI, TinySecp256k1Interface } from 'ecpair';
+import * as tinysecp from "tiny-secp256k1";
 import createKeccakHash from "keccak";
 import elliptic from "elliptic";
 import { toChecksumAddress } from "ethereum-checksum-address";
+
+const ECPair: ECPairAPI = ECPairFactory(tinysecp);
 
 var dir = "./tmp";
 
@@ -19,8 +23,8 @@ interface Map {
 const curves: Map = {
   secp256k1: { kty: "EC", name: "ECDSA", namedCurve: "K-256", hash: "SHA-256" },
   secp256r1: { kty: "EC", name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" },
-  ed25519: { kty: "OKP", name: "EdDSA", namedCurve: "Ed25519", hash: "SHA-256" }
-  // x25519: { kty: "OKP", name: "ECDH-ES", namedCurve: "x25519", hash: "SHA-256" }
+  ed25519: { kty: "OKP", name: "EdDSA", namedCurve: "Ed25519", hash: "SHA-256" },
+  x25519: { kty: "OKP", name: "ECDH-ES", namedCurve: "x25519", hash: "SHA-256" }
 };
 let privateKeyHex = "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a";
 
@@ -68,7 +72,7 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
     ]);
 
   const k = await x(km);
-  
+
   let todaysDate = new Date();
   let lastDate = new Date(todaysDate.setFullYear(todaysDate.getFullYear() + 1));
 
@@ -111,41 +115,41 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
   // console.log(await km.export("ssh", "private"));
   // console.log(await km.export("ssh", "public", `exported-from: ${type}`));
 };
+(async function () {
+  for (let c in curves) {
+    let curve = curves[c];
+    let km = new keyconvert(curve);
+    let harness = JSON.parse(readFileSync(`./test/check/${c}.json`, "utf-8"));
 
-for (let c in curves) {
-  let curve = curves[c];
-  let km = new keyconvert(curve);
-  let harness = JSON.parse(readFileSync(`./test/check/${c}.json`, "utf-8"));
+    it(`Imports Private Key as raw: ${c}`, async function () {
+      await km.import(Buffer.from(privateKeyHex, "hex"), "raw:private");
+      await runAssertions("raw:private", km, c, harness);
+    });
 
-  it(`Imports Private Key as raw: ${c}`, async function () {
-    await km.import(Buffer.from(privateKeyHex, "hex"), "raw:private");
-    await runAssertions("raw:private", km, c, harness);
-  });
+    it(`Imports Private Key as Mnemonic: ${c}`, async function () {
+      await km.import(harness[2], "bip39");
+      await runAssertions("bip39", km, c, harness);
+    });
 
-  it(`Imports Private Key as Mnemonic: ${c}`, async function () {
-    await km.import(harness[2], "bip39");
-    await runAssertions("bip39", km, c, harness);
-  });
+    it(`Imports Private Key as WIF: ${c}`, async function () {
+      await km.import(harness[3], "wif");
+      await runAssertions("wif", km, c, harness);
+    });
 
-  it(`Imports Private Key as WIF: ${c}`, async function () {
-    await km.import(harness[3], "wif");
-    await runAssertions("wif", km, c, harness);
-  });
+    it(`Imports Private Key as hex string: ${c}`, async function () {
+      await km.import(harness[0], "hex");
+      await runAssertions("hex", km, c, harness);
+    });
 
-  it(`Imports Private Key as hex string: ${c}`, async function () {
-    await km.import(harness[0], "hex");
-    await runAssertions("hex", km, c, harness);
-  });
+    it(`Imports Private Key as JsonWebKey: ${c}`, async function () {
+      await km.import(harness[4], "jwk");
+      await runAssertions("jwk", km, c, harness);
+    });
 
-  it(`Imports Private Key as JsonWebKey: ${c}`, async function () {
-    await km.import(harness[4], "jwk");
-    await runAssertions("jwk", km, c, harness);
-  });
-
-  it(`Imports Private Key as PEM (pkcs8): ${c}`, async function () {
-    await km.import(harness[5], "pkcs8");
-    await runAssertions("pkcs8", km, c, harness);
-  });
-}
-
+    it(`Imports Private Key as PEM (pkcs8): ${c}`, async function () {
+      await km.import(harness[5], "pkcs8");
+      await runAssertions("pkcs8", km, c, harness);
+    });
+  }
+})()
 //TODO loop through all key curves, difference between JWK OKP and EC
