@@ -119,7 +119,7 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
   for (let c in curves) {
     let curve = curves[c];
     let km = new keyconvert(curve);
-    let harness = JSON.parse(readFileSync(`./test/check/${c}.json`, "utf-8"));
+    let harness = JSON.parse(readFileSync(`./test_content/check/${c}.json`, "utf-8"));
 
     it(`Imports Private Key as raw: ${c}`, async function () {
       await km.import(Buffer.from(privateKeyHex, "hex"), "raw:private");
