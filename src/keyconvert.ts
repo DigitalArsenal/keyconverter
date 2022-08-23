@@ -1,3 +1,4 @@
+import "./shims";
 import base64URL from "base64url";
 import * as liner from "../lib/webcrypto.liner.index.es";
 import wif from "wif";
@@ -64,7 +65,7 @@ type ExtendedCryptoKey = {
   data: any;
 };
 
-export class keyconvert {
+class keyconvert {
   privateKey: CryptoKey;
   publicKey: CryptoKey;
   keyCurve: EcKeyGenParams;
@@ -344,3 +345,5 @@ export class keyconvert {
     this.keyUsages = keyUsages || ["sign", "verify", "deriveKey", "deriveBits"];
   }
 }
+
+export { keyconvert as default };
