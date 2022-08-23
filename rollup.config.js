@@ -7,16 +7,18 @@ import nodePolyfills from "rollup-plugin-polyfill-node";
 export default {
   input: "src/keyconvert.ts",
   output: {
-    dir: "build",
-    format: "esm"
+    format: "esm",
+    file: "build/keyconvert.mjs",
   },
   plugins: [
-    nodePolyfills({ include: ["buffer", "crypto", "stream", "fs", "path", "os"] }),
+    nodePolyfills({
+      include: ["buffer", "crypto", "stream", "fs", "path", "os", "util"],
+    }),
     typescript({
-      module: "esnext"
+      module: "esnext",
     }),
     commonjs(),
     json(),
-    resolve({ preferBuiltins: true })
-  ]
+    resolve({ preferBuiltins: true }),
+  ],
 };
