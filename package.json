@@ -52,7 +52,7 @@
     "stream": "stream-browserify",
     "crypto": "crypto-browserify",
     "process": "process",
-    "global":"globalThis"
+    "global": "globalThis"
   },
   "devDependencies": {
     "@babel/plugin-transform-spread": "^7.18.6",
@@ -75,6 +75,7 @@
     "chai": "^4.3.6",
     "core-js": "^3.23.4",
     "crypto-browserify": "^3.12.0",
+    "ecpair": "^2.1.0",
     "ethereum-checksum-address": "^0.0.8",
     "expect.js": "^0.3.1",
     "karma": "^6.4.0",
@@ -111,6 +112,7 @@
     "protobufjs": "^7.0.0",
     "ripemd160": "^2.0.2",
     "sshpk": "^1.17.0",
+    "tiny-secp256k1": "^2.2.1",
     "varint": "^6.0.0",
     "webcrypto-liner": "github:DigitalArsenal/webcrypto-liner#DA_change_crypto_providers",
     "wif": "^2.0.6"

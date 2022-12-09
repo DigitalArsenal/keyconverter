@@ -347,4 +347,4 @@ class keyconvert {
   }
 }
 
-export { keyconvert as default };
+export { keyconvert };
