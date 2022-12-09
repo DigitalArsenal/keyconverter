@@ -1,8 +1,9 @@
+//@ts-nocheck
 import "./shims";
 import base64URL from "base64url";
-import * as liner from "../lib/webcrypto.liner.index.es";
+import * as liner from "webcrypto-liner";
 import wif from "wif";
-import * as x509 from "../lib/x509.es";
+import * as x509 from "@peculiar/x509";
 import sshpk from "sshpk";
 import * as bip39 from "bip39";
 import { Buffer } from "buffer";
