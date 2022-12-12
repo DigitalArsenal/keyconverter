@@ -9,17 +9,13 @@ import * as bip39 from "bip39";
 import { Buffer } from "buffer";
 import elliptic from "elliptic";
 import { generateKeyPair } from "curve25519-js";
-import { Convert } from "pvtsutils";
 import PeerId from "peer-id";
 import protobufjs from "protobufjs";
-import crypto, { PrivateKey } from "libp2p-crypto";
-let { secp256k1 } = crypto.keys.supportedKeys;
-import CID from 'cids';
-import { base58btc } from 'multiformats/bases/base58';
-import multihash from "multihashes";
-import { atob } from "buffer";
+import crypto from "libp2p-crypto";
 
-const { FromHex } = Convert;
+import CID from 'cids';
+import multihash from "multihashes";
+
 const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
 
@@ -258,6 +254,10 @@ class keyconvert {
   public async import(privateKey: Buffer | JsonWebKey | string | CryptoKey, encoding?: FormatOptions): Promise<void> {
 
     this.privateKey = undefined;
+
+    if (privateKey?.crv === "secp256k1") {
+      privateKey.crv = "K-256";
+    }
 
     if (encoding === "ipfs:protobuf") {
       try {
