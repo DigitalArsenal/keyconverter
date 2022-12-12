@@ -84,6 +84,7 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
 
   if (km.keyCurve.namedCurve === "K-256") {
     let protoBufKey = await readFile("./test_content/secp256k1.protobuf.key");
+    console.log(km.keyCurve)
     let kmx = new keyconvert(km.keyCurve);
     await kmx.import(protoBufKey, "ipfs:protobuf");
   }
