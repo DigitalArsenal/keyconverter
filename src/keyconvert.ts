@@ -255,11 +255,7 @@ class keyconvert {
     return (await cert).toString(encoding);
   }
 
-  public async import(privateKey: Buffer, encoding?: FormatOptions): Promise<void>;
-  public async import(privateKey: JsonWebKey): Promise<void>;
-  public async import(privateKey: string, encoding?: FormatOptions): Promise<void>;
-  public async import(privateKey: CryptoKey): Promise<void>;
-  public async import(privateKey: any, encoding?: FormatOptions): Promise<void> {
+  public async import(privateKey: Buffer | JsonWebKey | string | CryptoKey, encoding?: FormatOptions): Promise<void> {
 
     this.privateKey = undefined;
 
