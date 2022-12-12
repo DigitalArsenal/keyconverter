@@ -262,7 +262,7 @@ class keyconvert {
   public async import(privateKey: any, encoding?: FormatOptions): Promise<void> {
 
     this.privateKey = undefined;
-    let tt = encoding;
+
     if (encoding === "ipfs:protobuf") {
       try {
         const ipfsKey = await protobufjs.parse(`
@@ -318,7 +318,9 @@ class keyconvert {
           throw Error(`Unknown Input: ${privateKey} `);
         }
       }
-
+      if (encoding === "hex") {
+        privateKey = privateKey.replace(/^0x/, "");
+      }
       if (!this.privateKey) {
         let jwk = keyconvert.jwkConversion(privateKey, this.keyCurve, "hex");
         this.privateKey = await subtle.importKey("jwk", jwk, this.keyCurve, this.extractable, this.keyUsages);
@@ -336,7 +338,7 @@ class keyconvert {
       this.publicKey = await subtle.importKey("jwk", importJWK, this.keyCurve, this.extractable, this.keyUsages);
     }
 
-    return;
+    return this.publicKey;
   }
 
   constructor(namedCurve: EcKeyGenParams, algorithm: AlgorithmIdentifier = EcAlgorithm, extractable: boolean = true, keyUsages?: Array<KeyUsageOptions>) {
