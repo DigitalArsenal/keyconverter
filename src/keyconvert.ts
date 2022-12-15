@@ -15,6 +15,9 @@ import crypto from "libp2p-crypto";
 
 import CID from 'cids';
 import multihash from "multihashes";
+import createKeccakHash from "keccak";
+import elliptic from "elliptic";
+import { toChecksumAddress } from "ethereum-checksum-address";
 
 const { EcAlgorithm } = x509;
 const { CryptoKey } = liner;
@@ -355,6 +358,7 @@ class keyconvert {
 }
 
 const pubKeyToEthAddress = async (pubPoint: string): Promise<string> => {
+  if (pubPoint.slice(0, 2) !== "04" || pubPoint.length < 130) return undefined;
   let keccakHex = createKeccakHash("keccak256")
     .update(Buffer.from(pubPoint.slice(2), "hex"))
     .digest("hex");

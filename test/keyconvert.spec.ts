@@ -1,4 +1,4 @@
-import { keyconvert, FormatOptions } from "../src/keyconvert";
+import { keyconvert, pubKeyToEthAddress, FormatOptions } from "../src/keyconvert";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { readFile } from "fs/promises";
 import { exec, execSync } from "child_process";
@@ -55,8 +55,10 @@ const ethereumAddress = async (input: string): Promise<string> => {
 
 const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string, harness: any) => {
 
-  const x = async (p: keyconvert) =>
-    await Promise.all([
+
+  const x = async (p: keyconvert) => {
+
+    return await Promise.all([
       p.privateKeyHex(),
       p.publicKeyHex(),
       p.export("bip39", "private"),
@@ -64,12 +66,13 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
       p.export("jwk", "private"),
       p.export("pkcs8", "private"),
       bitcoinAddress((await p.export("wif", "private")) as string),
-      ethereumAddress((await p.privateKeyHex()) as string),
+      p.keyCurve.namedCurve === "K-256" ? await pubKeyToEthAddress(await p.publicKeyHex()) : ethereumAddress((await p.privateKeyHex()) as string),
       (p.ipfsPeerID()).then(pID => pID.toString()),
       p.ipnsCID(),
       p.export("ipfs:protobuf", "private"),
       p.export("ipfs:protobuf", "public"),
     ]);
+  }
 
   const k = await x(km);
 
