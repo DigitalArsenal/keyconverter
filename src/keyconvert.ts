@@ -157,7 +157,12 @@ class keyconvert {
       } else if (encoding === "jwk") {
         let publicKey = await subtle.exportKey(encoding, this.publicKey);
         let privateKey = await subtle.exportKey(encoding, this.privateKey);
-        return Object.assign(privateKey, publicKey);
+        if (type === "public") {
+          return publicKey;
+        } else {
+          return Object.assign(privateKey, publicKey);
+        }
+
       } else if (encoding) {
         return await subtle.exportKey(encoding, type === "private" ? this.privateKey : this.publicKey);
       }
