@@ -339,7 +339,7 @@ class keyconvert {
       delete importJWK.d;
       delete importJWK.key_ops;
       delete importJWK.ext;
-      console.log("import", importJWK);
+   
       this.publicKey = await subtle.importKey("jwk", importJWK, this.keyCurve, this.extractable, this.keyUsages);
     }
 
