@@ -157,6 +157,7 @@ class keyconvert {
       } else if (encoding === "jwk") {
         let publicKey = await subtle.exportKey(encoding, this.publicKey);
         let privateKey = await subtle.exportKey(encoding, this.privateKey);
+
         if (type === "public") {
           return publicKey;
         } else {
@@ -335,7 +336,10 @@ class keyconvert {
         delete jwk.d;
         importJWK = jwk;
       }
-
+      delete importJWK.d;
+      delete importJWK.key_ops;
+      delete importJWK.ext;
+      console.log("import", importJWK);
       this.publicKey = await subtle.importKey("jwk", importJWK, this.keyCurve, this.extractable, this.keyUsages);
     }
 
