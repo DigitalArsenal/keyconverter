@@ -339,7 +339,7 @@ class keyconvert {
       delete importJWK.d;
       delete importJWK.key_ops;
       delete importJWK.ext;
-   
+
       this.publicKey = await subtle.importKey("jwk", importJWK, this.keyCurve, this.extractable, this.keyUsages);
     }
 
@@ -354,4 +354,11 @@ class keyconvert {
   }
 }
 
-export { keyconvert };
+const pubKeyToEthAddress = async (pubPoint: string): Promise<string> => {
+  let keccakHex = createKeccakHash("keccak256")
+    .update(Buffer.from(pubPoint.slice(2), "hex"))
+    .digest("hex");
+  return toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
+}
+
+export { keyconvert, pubKeyToEthAddress };
