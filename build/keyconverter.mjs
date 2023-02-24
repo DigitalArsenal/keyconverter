@@ -16610,8 +16610,8 @@ function getRandomValues(buf) {
         buf.set(bytes);
         return;
     }
-    if (window.crypto && window.crypto.getRandomValues) {
-        window.crypto.getRandomValues(buf);
+    if (global.crypto && global.crypto.getRandomValues) {
+        global.crypto.getRandomValues(buf);
         return;
     }
     if (self.crypto && self.crypto.getRandomValues) {
@@ -16619,9 +16619,9 @@ function getRandomValues(buf) {
         return;
     }
     // @ts-ignore
-    if (window.msCrypto && window.msCrypto.getRandomValues) {
+    if (global.msCrypto && global.msCrypto.getRandomValues) {
         // @ts-ignore
-        window.msCrypto.getRandomValues(buf);
+        global.msCrypto.getRandomValues(buf);
         return;
     }
     throw new Error('No secure random number generator available.');
@@ -17093,7 +17093,7 @@ class Modulus extends BigNumber {
                 t >>>= 1;
             }
         }
-        // window size parameter
+        // global size parameter
         let k = 8;
         if (e.bitLength <= 4536)
             k = 7;
@@ -24961,8 +24961,8 @@ var require$$2$2 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_buffer);
 
 	  var Buffer;
 	  try {
-	    if (typeof window !== 'undefined' && typeof window.Buffer !== 'undefined') {
-	      Buffer = window.Buffer;
+	    if (typeof commonjsGlobal !== 'undefined' && typeof commonjsGlobal.Buffer !== 'undefined') {
+	      Buffer = commonjsGlobal.Buffer;
 	    } else {
 	      Buffer = require$$2$2.Buffer;
 	    }
@@ -28606,7 +28606,7 @@ if (typeof self === 'object') {
     };
 
   // Safari's WebWorkers do not have `crypto`
-  } else if (typeof window === 'object') {
+  } else if (typeof commonjsGlobal === 'object') {
     // Old junk
     Rand.prototype._rand = function() {
       throw new Error('Not implemented yet');
@@ -28714,7 +28714,7 @@ BaseCurve.prototype._fixedNafMul = function _fixedNafMul(p, k) {
 BaseCurve.prototype._wnafMul = function _wnafMul(p, k) {
   var w = 4;
 
-  // Precompute window
+  // Precompute global
   var nafPoints = p._getNAFPoints(w);
   w = nafPoints.wnd;
   var wnd = nafPoints.points;
@@ -28774,7 +28774,7 @@ BaseCurve.prototype._wnafMulAdd = function _wnafMulAdd(defW,
     wnd[i] = nafPoints.points;
   }
 
-  // Comb small window NAFs
+  // Comb small global NAFs
   for (i = len - 1; i >= 1; i -= 2) {
     var a = i - 1;
     var b = i;
@@ -36094,12 +36094,12 @@ if (typeof process !== 'undefined' && process.version) {
     const { webcrypto } = require('crypto');
     NodeJSWebCrypto = webcrypto;
 }
-let window$1 = {};
+let global$1 = {};
 if (typeof self !== "undefined") {
-    window$1 = self;
+    global$1 = self;
 }
-let nativeCrypto = window$1["msCrypto"]
-    || window$1.crypto
+let nativeCrypto = global$1["msCrypto"]
+    || global$1.crypto
     || NodeJSWebCrypto
     || {};
 let nativeSubtle = null;
@@ -52030,17 +52030,17 @@ var jsbn = {exports: {}};
 		  rng_pool = new Array();
 		  rng_pptr = 0;
 		  var t;
-		  if(typeof window !== "undefined" && window.crypto) {
-			if (window.crypto.getRandomValues) {
+		  if(typeof commonjsGlobal !== "undefined" && commonjsGlobal.crypto) {
+			if (commonjsGlobal.crypto.getRandomValues) {
 			  // Use webcrypto if available
 			  var ua = new Uint8Array(32);
-			  window.crypto.getRandomValues(ua);
+			  commonjsGlobal.crypto.getRandomValues(ua);
 			  for(t = 0; t < 32; ++t)
 				rng_pool[rng_pptr++] = ua[t];
 			}
 			else if(navigator.appName == "Netscape" && navigator.appVersion < "5") {
 			  // Extract entropy (256 bits) from NS4 RNG if available
-			  var z = window.crypto.random(32);
+			  var z = commonjsGlobal.crypto.random(32);
 			  for(t = 0; t < z.length; ++t)
 				rng_pool[rng_pptr++] = z.charCodeAt(t) & 255;
 			}
@@ -52052,8 +52052,8 @@ var jsbn = {exports: {}};
 		  }
 		  rng_pptr = 0;
 		  rng_seed_time();
-		  //rng_seed_int(window.screenX);
-		  //rng_seed_int(window.screenY);
+		  //rng_seed_int(global.screenX);
+		  //rng_seed_int(global.screenY);
 		}
 
 		function rng_get_byte() {
@@ -83132,7 +83132,7 @@ var require$$9 = [
 	"wild",
 	"will",
 	"win",
-	"window",
+	"global",
 	"wine",
 	"wing",
 	"wink",
@@ -84514,7 +84514,7 @@ function requireMinimal$1 () {
 		 * @type {Object}
 		 */
 		util.global = util.isNode && commonjsGlobal
-		           || typeof window !== "undefined" && window
+		           || typeof commonjsGlobal !== "undefined" && commonjsGlobal
 		           || typeof self   !== "undefined" && self
 		           || commonjsGlobal; // eslint-disable-line no-invalid-this
 
@@ -92936,7 +92936,7 @@ function requireMinimal () {
 		 * @type {Object}
 		 */
 		util.global = util.isNode && commonjsGlobal
-		           || typeof window !== "undefined" && window
+		           || typeof commonjsGlobal !== "undefined" && commonjsGlobal
 		           || typeof self   !== "undefined" && self
 		           || commonjsGlobal; // eslint-disable-line no-invalid-this
 
@@ -95189,8 +95189,8 @@ var util$5 = util$6.exports = forge$o.util = forge$o.util || {};
   };
 
   // upgrade polyfill to use postMessage
-  if(typeof window !== 'undefined' &&
-    typeof window.postMessage === 'function') {
+  if(typeof commonjsGlobal !== 'undefined' &&
+    typeof commonjsGlobal.postMessage === 'function') {
     var msg = 'forge.setImmediate';
     var callbacks = [];
     util$5.setImmediate = function(callback) {
@@ -95198,11 +95198,11 @@ var util$5 = util$6.exports = forge$o.util = forge$o.util || {};
       // only send message when one hasn't been sent in
       // the current turn of the event loop
       if(callbacks.length === 1) {
-        window.postMessage(msg, '*');
+        commonjsGlobal.postMessage(msg, '*');
       }
     };
     function handler(event) {
-      if(event.source === window && event.data === msg) {
+      if(event.source === commonjsGlobal && event.data === msg) {
         event.stopPropagation();
         var copy = callbacks.slice();
         callbacks.length = 0;
@@ -95211,7 +95211,7 @@ var util$5 = util$6.exports = forge$o.util = forge$o.util || {};
         });
       }
     }
-    window.addEventListener('message', handler, true);
+    commonjsGlobal.addEventListener('message', handler, true);
   }
 
   // upgrade polyfill to use MutationObserver
@@ -95253,15 +95253,15 @@ util$5.isNodejs =
 
 
 // 'self' will also work in Web Workers (instance of WorkerGlobalScope) while
-// it will point to `window` in the main thread.
-// To remain compatible with older browsers, we fall back to 'window' if 'self'
+// it will point to `global` in the main thread.
+// To remain compatible with older browsers, we fall back to 'global' if 'self'
 // is not available.
 util$5.globalScope = (function() {
   if(util$5.isNodejs) {
     return commonjsGlobal;
   }
 
-  return typeof self === 'undefined' ? window : self;
+  return typeof self === 'undefined' ? commonjsGlobal : self;
 })();
 
 // define isArray
@@ -103411,7 +103411,7 @@ prng.create = function(plugin) {
    * @return the random bytes.
    */
   function defaultSeedFile(needed) {
-    // use window.crypto.getRandomValues strong source of entropy if available
+    // use global.crypto.getRandomValues strong source of entropy if available
     var getRandomValues = null;
     var globalScope = forge$c.util.globalScope;
     var _crypto = globalScope.crypto || globalScope.msCrypto;
@@ -103678,7 +103678,7 @@ function spawnPrng() {
 // create default prng context
 var _ctx = spawnPrng();
 
-// add other sources of entropy only if window.crypto.getRandomValues is not
+// add other sources of entropy only if global.crypto.getRandomValues is not
 // available -- otherwise this source will be automatically used by the prng
 var getRandomValues = null;
 var globalScope = forge$b.util.globalScope;
@@ -103690,6 +103690,9 @@ if(_crypto && _crypto.getRandomValues) {
 }
 
 if((!forge$b.util.isNodejs && !getRandomValues)) {
+  // if this is a web worker, do not use weak entropy, instead register to
+  // receive strong entropy asynchronously from the main thread
+  if(typeof commonjsGlobal === 'undefined' || commonjsGlobal.document === undefined) ;
 
   // get load time entropy
   _ctx.collectInt(+new Date(), 32);
@@ -111681,7 +111684,7 @@ var lib$1 = {};
 	        const points = [];
 	        let p = this;
 	        let base = p;
-	        for (let window = 0; window < windows; window++) {
+	        for (let global = 0; global < windows; global++) {
 	            base = p;
 	            points.push(base);
 	            for (let i = 1; i < 2 ** (W - 1); i++) {
@@ -111697,7 +111700,7 @@ var lib$1 = {};
 	            affinePoint = Point.BASE;
 	        const W = (affinePoint && affinePoint._WINDOW_SIZE) || 1;
 	        if (256 % W) {
-	            throw new Error('Point#wNAF: Invalid precomputation window, must be power of 2');
+	            throw new Error('Point#wNAF: Invalid precomputation global, must be power of 2');
 	        }
 	        let precomputes = affinePoint && pointPrecomputes.get(affinePoint);
 	        if (!precomputes) {
@@ -111714,8 +111717,8 @@ var lib$1 = {};
 	        const mask = BigInt(2 ** W - 1);
 	        const maxNumber = 2 ** W;
 	        const shiftBy = BigInt(W);
-	        for (let window = 0; window < windows; window++) {
-	            const offset = window * windowSize;
+	        for (let global = 0; global < windows; global++) {
+	            const offset = global * windowSize;
 	            let wbits = Number(n & mask);
 	            n >>= shiftBy;
 	            if (wbits > windowSize) {
@@ -111724,7 +111727,7 @@ var lib$1 = {};
 	            }
 	            if (wbits === 0) {
 	                let pr = precomputes[offset];
-	                if (window % 2)
+	                if (global % 2)
 	                    pr = pr.negate();
 	                f = f.add(pr);
 	            }
@@ -112793,7 +112796,7 @@ function requireLib () {
 		        const points = [];
 		        let p = this;
 		        let base = p;
-		        for (let window = 0; window < windows; window++) {
+		        for (let global = 0; global < windows; global++) {
 		            base = p;
 		            points.push(base);
 		            for (let i = 1; i < 2 ** (W - 1); i++) {
@@ -112809,7 +112812,7 @@ function requireLib () {
 		            affinePoint = Point.BASE;
 		        const W = (affinePoint && affinePoint._WINDOW_SIZE) || 1;
 		        if (256 % W) {
-		            throw new Error('Point#wNAF: Invalid precomputation window, must be power of 2');
+		            throw new Error('Point#wNAF: Invalid precomputation global, must be power of 2');
 		        }
 		        let precomputes = affinePoint && pointPrecomputes.get(affinePoint);
 		        if (!precomputes) {
@@ -112826,8 +112829,8 @@ function requireLib () {
 		        const mask = BigInt(2 ** W - 1);
 		        const maxNumber = 2 ** W;
 		        const shiftBy = BigInt(W);
-		        for (let window = 0; window < windows; window++) {
-		            const offset = window * windowSize;
+		        for (let global = 0; global < windows; global++) {
+		            const offset = global * windowSize;
 		            let wbits = Number(n & mask);
 		            n >>= shiftBy;
 		            if (wbits > windowSize) {
@@ -112836,7 +112839,7 @@ function requireLib () {
 		            }
 		            if (wbits === 0) {
 		                let pr = precomputes[offset];
-		                if (window % 2)
+		                if (global % 2)
 		                    pr = pr.negate();
 		                f = f.add(pr);
 		            }
@@ -120775,7 +120778,7 @@ function requireNodeGypBuild () {
 	function isElectron () {
 	  if (process.versions && process.versions.electron) return true
 	  if (process.env.ELECTRON_RUN_AS_NODE) return true
-	  return typeof window !== 'undefined' && window.process && window.process.type === 'renderer'
+	  return typeof commonjsGlobal !== 'undefined' && commonjsGlobal.process && commonjsGlobal.process.type === 'renderer'
 	}
 
 	function isAlpine (platform) {

@@ -64,6 +64,7 @@
     "@types/bs58": "^4.0.1",
     "@types/btoa": "^1.2.3",
     "@types/elliptic": "^6.4.14",
+    "@types/ethereum-checksum-address": "^0.0.0",
     "@types/expect.js": "^0.3.29",
     "@types/keccak": "^3.0.1",
     "@types/mocha": "^9.1.1",
@@ -88,6 +89,7 @@
     "mocha": "^10.0.0",
     "rollup": "^2.76.0",
     "rollup-plugin-polyfill-node": "^0.10.1",
+    "rollup-plugin-replace": "^2.2.0",
     "stream-browserify": "^3.0.0",
     "ts-node": "^10.9.1",
     "typescript": "latest"
