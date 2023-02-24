@@ -1,11 +1,11 @@
 {
-  "name": "keyconvert",
+  "name": "keyconverter",
   "version": "1.0.1",
   "description": "Use Bitcoin keys to create provably secure x509 public key infrastructure certificates",
   "main": "src/keyconvert.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DigitalArsenal/keyconvert.git"
+    "url": "git+https://github.com/DigitalArsenal/keyconverter.git"
   },
   "keywords": [
     "Bitcoin",
@@ -22,7 +22,7 @@
   "author": "digitalarsenal.io, inc.",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DigitalArsenal/keyconvert/issues"
+    "url": "https://github.com/DigitalArsenal/keyconverter/issues"
   },
   "mocha": {
     "require": [
@@ -36,7 +36,7 @@
       "test/**"
     ]
   },
-  "homepage": "https://github.com/DigitalArsenal/keyconvert#readme",
+  "homepage": "https://github.com/DigitalArsenal/keyconverter#readme",
   "scripts": {
     "test:browser": "karma start",
     "build:types": "tsc -p tsconfig.json --outDir build/types --declaration --emitDeclarationOnly",
