@@ -1,6 +1,6 @@
 {
   "name": "keyconverter",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Use Bitcoin keys to create provably secure x509 public key infrastructure certificates",
   "main": "build/keyconverter.mjs",
   "repository": {
