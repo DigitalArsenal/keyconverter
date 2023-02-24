@@ -1,4 +1,4 @@
-import { keyconvert, pubKeyToEthAddress, FormatOptions } from "../src/keyconvert";
+import { keyconverter, pubKeyToEthAddress, FormatOptions } from "../src/keyconverter";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { readFile } from "fs/promises";
 import { exec, execSync } from "child_process";
@@ -53,10 +53,10 @@ const ethereumAddress = async (input: string): Promise<string> => {
   return toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
 }
 
-const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string, harness: any) => {
+const runAssertions = async (type: FormatOptions, km: keyconverter, cindex: string, harness: any) => {
 
 
-  const x = async (p: keyconvert) => {
+  const x = async (p: keyconverter) => {
 
     return await Promise.all([
       p.privateKeyHex(),
@@ -88,7 +88,7 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
   if (km.keyCurve.namedCurve === "K-256") {
     let protoBufKey = await readFile("./test_content/secp256k1.protobuf.key");
     console.log(km.keyCurve)
-    let kmx = new keyconvert(km.keyCurve);
+    let kmx = new keyconverter(km.keyCurve);
     await kmx.import(protoBufKey, "ipfs:protobuf");
   }
 
@@ -122,7 +122,7 @@ const runAssertions = async (type: FormatOptions, km: keyconvert, cindex: string
 (async function () {
   for (let c in curves) {
     let curve = curves[c];
-    let km = new keyconvert(curve);
+    let km = new keyconverter(curve);
     let harness = JSON.parse(readFileSync(`./test_content/check/${c}.json`, "utf-8"));
 
     it(`Imports Private Key as raw: ${c}`, async function () {

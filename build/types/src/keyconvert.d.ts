@@ -33,7 +33,7 @@ export declare type FormatOptions = KeyFormat | BufferEncoding | "wif" | "bip39"
  * unwrapKey: The key may be used to unwrap a key.
  */
 declare type KeyUsageOptions = "encrypt" | "decrypt" | "sign" | "verify" | "deriveKey" | "deriveBits" | "wrapKey" | "unwrapKey";
-declare class keyconvert {
+declare class keyconverter {
     privateKey: CryptoKey;
     publicKey: CryptoKey;
     keyCurve: EcKeyGenParams;
@@ -72,4 +72,4 @@ declare class keyconvert {
     constructor(namedCurve: EcKeyGenParams, algorithm?: AlgorithmIdentifier, extractable?: boolean, keyUsages?: Array<KeyUsageOptions>);
 }
 declare const pubKeyToEthAddress: (pubPoint: string) => Promise<string>;
-export { keyconvert, pubKeyToEthAddress };
+export { keyconverter, pubKeyToEthAddress };

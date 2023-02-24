@@ -5,10 +5,10 @@ import resolve from "@rollup/plugin-node-resolve";
 import nodePolyfills from "rollup-plugin-polyfill-node";
 
 export default {
-  input: "src/keyconvert.ts",
+  input: "src/keyconverter.ts",
   output: {
     format: "esm",
-    file: "build/keyconvert.mjs",
+    file: "build/keyconverter.mjs",
   },
   plugins: [
     nodePolyfills({

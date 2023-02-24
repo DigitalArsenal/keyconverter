@@ -65,7 +65,7 @@ type ExtendedCryptoKey = {
   data: any;
 };
 
-class keyconvert {
+class keyconverter {
   privateKey: CryptoKey;
   publicKey: CryptoKey;
   keyCurve: EcKeyGenParams;
@@ -133,13 +133,13 @@ class keyconvert {
         return _hex;
       } else if (encoding === "bip39") {
         if (type === "public") {
-          keyconvert.exportFormatError(encoding, type);
+          keyconverter.exportFormatError(encoding, type);
         } else {
           return bip39.entropyToMnemonic(Buffer.from(_hex, "hex"));
         }
       } else if (encoding === "wif") {
         if (type === "public") {
-          keyconvert.exportFormatError(encoding, type);
+          keyconverter.exportFormatError(encoding, type);
         } else {
           return wif.encode(128, Buffer.from(_hex, "hex"), true);
         }
@@ -300,7 +300,7 @@ class keyconvert {
       this.privateKey = privateKey;
     } else {
       if (~["raw", "raw:private", undefined].indexOf(encoding)) {
-        privateKey = keyconvert.toHex(privateKey);
+        privateKey = keyconverter.toHex(privateKey);
       } else {
         if (typeof privateKey === "string") {
           if (encoding.match(/pkcs/) || privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
@@ -312,7 +312,7 @@ class keyconvert {
             privateKey = bip39.mnemonicToEntropy(privateKey);
           } else if (encoding === "wif") {
             const decodedWif = wif.decode(privateKey);
-            privateKey = keyconvert.toHex(decodedWif.privateKey);
+            privateKey = keyconverter.toHex(decodedWif.privateKey);
             encoding = "hex";
           } else if (!encoding) {
             throw Error(`Unknown Private Key Encoding: ${encoding} `);
@@ -327,7 +327,7 @@ class keyconvert {
         privateKey = privateKey.replace(/^0x/, "");
       }
       if (!this.privateKey) {
-        let jwk = keyconvert.jwkConversion(privateKey, this.keyCurve, "hex");
+        let jwk = keyconverter.jwkConversion(privateKey, this.keyCurve, "hex");
         this.privateKey = await subtle.importKey("jwk", jwk, this.keyCurve, this.extractable, this.keyUsages);
       }
 
@@ -335,7 +335,7 @@ class keyconvert {
       if (!importJWK.x) {
         const exportedPrivateKey: JsonWebKey = await subtle.exportKey("jwk", this.privateKey);
         privateKey = base64URL.toBuffer(exportedPrivateKey.d);
-        let jwk = keyconvert.jwkConversion(privateKey.toString("hex"), this.keyCurve, "hex");
+        let jwk = keyconverter.jwkConversion(privateKey.toString("hex"), this.keyCurve, "hex");
         delete jwk.d;
         importJWK = jwk;
       }
@@ -365,4 +365,4 @@ const pubKeyToEthAddress = async (pubPoint: string): Promise<string> => {
   return toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
 }
 
-export { keyconvert, pubKeyToEthAddress };
+export { keyconverter, pubKeyToEthAddress };

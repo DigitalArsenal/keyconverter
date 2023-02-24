@@ -1,8 +1,8 @@
 {
   "name": "keyconverter",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Use Bitcoin keys to create provably secure x509 public key infrastructure certificates",
-  "main": "build/keyconvert.mjs",
+  "main": "build/keyconverter.mjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DigitalArsenal/keyconverter.git"
@@ -41,8 +41,8 @@
     "test:browser": "karma start",
     "build:types": "tsc -p tsconfig.json --outDir build/types --declaration --emitDeclarationOnly",
     "build": "rollup -c",
-    "esbuild:browser": "esbuild src/keyconvert.ts --bundle --format=esm --minify --sourcemap --target=chrome58,firefox57,safari11,edge18 > ./build/keyconvert.mjs",
-    "esbuild:node": "esbuild src/keyconvert.ts --bundle --format=esm --platform=node --target=node18 > ./build/keyconvert.mjs",
+    "esbuild:browser": "esbuild src/keyconverter.ts --bundle --format=esm --minify --sourcemap --target=chrome58,firefox57,safari11,edge18 > ./build/keyconverter.mjs",
+    "esbuild:node": "esbuild src/keyconverter.ts --bundle --format=esm --platform=node --target=node18 > ./build/keyconverter.mjs",
     "build:openssl:cert": "cd ./scripts/openssl_certs && ./certs.sh",
     "test": "export NODE_OPTIONS=--openssl-legacy-provider && mocha -s 300 --require ./test/scripts/chai-setup.js",
     "test:dev": "export NODE_OPTIONS=--openssl-legacy-provider && env DEV=true mocha -s 300 --require ./test/scripts/chai-setup.js -w --watch-files ./src/**/*,./test/**.*",
