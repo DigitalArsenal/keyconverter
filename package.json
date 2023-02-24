@@ -1,8 +1,8 @@
 {
   "name": "keyconverter",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Use Bitcoin keys to create provably secure x509 public key infrastructure certificates",
-  "main": "src/keyconvert.ts",
+  "main": "build/keyconvert.mjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DigitalArsenal/keyconverter.git"
