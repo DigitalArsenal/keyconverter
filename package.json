@@ -1,6 +1,6 @@
 {
   "name": "keyconverter",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Use Bitcoin keys to create provably secure x509 public key infrastructure certificates",
   "main": "build/keyconverter.mjs",
   "repository": {
@@ -111,7 +111,6 @@
     "multihashes": "^4.0.3",
     "peer-id": "^0.16.0",
     "process": "^0.11.10",
-    "promisify": "^0.0.3",
     "protobufjs": "^7.0.0",
     "ripemd160": "^2.0.2",
     "sshpk": "^1.17.0",
