@@ -19,6 +19,6 @@ export default {
     }),
     commonjs(),
     json(),
-    resolve({ preferBuiltins: true }),
+    resolve({ preferBuiltins: false }),
   ],
 };
