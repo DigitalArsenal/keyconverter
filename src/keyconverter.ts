@@ -1,3 +1,6 @@
+//Copyright 2023 DigitalArsenal.io, Inc.
+// MIT-Licensed.
+
 //@ts-nocheck
 import "./shims";
 import base64URL from "base64url";
