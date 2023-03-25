@@ -1,7 +1,6 @@
 //Copyright 2023 DigitalArsenal.io, Inc.
 // MIT-Licensed.
 
-//@ts-nocheck
 import "./shims";
 import base64URL from "base64url";
 import * as liner from "webcrypto-liner";
@@ -13,18 +12,18 @@ import { Buffer } from "buffer";
 import elliptic from "elliptic";
 import { generateKeyPair } from "curve25519-js";
 import PeerId from "peer-id";
-import protobufjs from "protobufjs";
 import lp2pcrypto from "libp2p-crypto";
-
 import CID from 'cids';
 import multihash from "multihashes";
 import createKeccakHash from "keccak";
-import elliptic from "elliptic";
 import { toChecksumAddress } from "ethereum-checksum-address";
 
 const { EcAlgorithm } = x509;
+
+//@ts-ignore
 const { CryptoKey } = liner;
 
+//@ts-ignore
 const { crypto: linerCrypto } = liner;
 
 let { subtle } = linerCrypto;
@@ -107,8 +106,8 @@ class keyconverter {
       kty: ~namedCurve.indexOf("secp") ? "EC" : "OKP",
       crv: namedCurve,
       d: base64URL(prvHex, format),
-      x: x ? base64URL(x, format) : null,
-      y: y ? base64URL(y, format) : null
+      x: x ? base64URL(x, format) : "",
+      y: y ? base64URL(y, format) : ""
     };
   }
 
@@ -120,14 +119,14 @@ class keyconverter {
     throw Error(`${encoding} format is not available for KeyType ${type}`);
   }
 
-  async export(encoding: FormatOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string> {
-    let namedCurve = this.keyCurve.namedCurve.toLowerCase();
+  async export(encoding: FormatOptions, type: KeyType = "public", comment?: string): Promise<JsonWebKey | ArrayBuffer | string | undefined> {
+    let namedCurve = this?.keyCurve?.namedCurve.toLowerCase();
     if (this.privateKey === undefined) {
       throw Error("No Private Key");
     } else {
       const _hex = type === "private" ? await this.privateKeyHex() : await this.publicKeyHex();
       if (encoding === "ipfs:protobuf") {
-        if (this.keyCurve.namedCurve != "K-256") return Buffer.from("");
+        if (this?.keyCurve?.namedCurve != "K-256") return Buffer.from("");
         let pP = [Buffer.from(await this.publicKeyHex(), "hex"), Buffer.from(await this.privateKeyHex(), "hex")];
         let key = type === "public" ? pP[0] : pP[1];
         let keyToExport = new lp2pcrypto.keys.supportedKeys.secp256k1[type === "public" ? "Secp256k1PublicKey" : "Secp256k1PrivateKey"](key, pP[0]);
@@ -154,7 +153,7 @@ class keyconverter {
         let pkcs8 = x509.PemConverter.encode(exportedKey, _keyType);
         if (encoding === "pkcs8" && type !== "public") {
           return pkcs8;
-        } else if (~["secp256r1", "ed25519"].indexOf(namedCurve)) {
+        } else if (namedCurve && ~["secp256r1", "ed25519"].indexOf(namedCurve)) {
           let sshkey = sshpk.parsePrivateKey(pkcs8, "pkcs8");
           sshkey.comment = comment;
           return sshkey.toPublic().toString("ssh");
@@ -175,10 +174,11 @@ class keyconverter {
         return await subtle.exportKey(encoding, type === "private" ? this.privateKey : this.publicKey);
       }
     }
+    return undefined;
   }
 
   async privateKeyHex(): Promise<string> {
-    if (this.privateKey === undefined) {
+    if (!this.privateKey.algorithm?.name) {
       throw Error("No Private Key");
     } else {
       let jwkPrivateKey = await subtle.exportKey("jwk", this.privateKey);
@@ -198,13 +198,14 @@ class keyconverter {
     const crypto = require("libp2p-crypto");
     const PeerId = require("peer-id");
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
+    //@ts-ignore
     let convertedKey = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(Buffer.from(await this.privateKeyHex(), "hex"));
     let pID: PeerId = await PeerId.createFromPrivKey(lp2pcrypto.keys.marshalPrivateKey(convertedKey), "secp256k1");
     return pID;
   }
 
   async ipnsCID(): Promise<String> {
-    if (this.keyCurve.namedCurve !== "K-256") return "";
+    if (this?.keyCurve?.namedCurve !== "K-256") return "";
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
     let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from(await this.publicKeyHex(), "hex"));
     let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
@@ -217,10 +218,12 @@ class keyconverter {
     issuer = `BTC`,
     notBefore = new Date("2020/01/01"),
     notAfter = new Date("2022/01/02"),
-    signingAlgorithm = null,
+    signingAlgorithm = {
+      name: "No Value"
+    },
     publicKey = this.publicKey,
     signingKey = this.privateKey,
-    extensions = null,
+    extensions = undefined,
     encoding = "pem"
   }: {
     serialNumber?: string;
@@ -228,14 +231,15 @@ class keyconverter {
     issuer?: string;
     notBefore?: Date;
     notAfter?: Date;
-    signingAlgorithm?: Object;
+    signingAlgorithm?: Algorithm | EcdsaParams;
     publicKey?: CryptoKey;
     signingKey?: CryptoKey;
-    extensions?: any[];
-    encoding?: string;
+    extensions?: any[] | undefined;
+    encoding?: "base64" | "base64url" | "hex" | "pem";
   } = {}): Promise<string> {
 
-    if (!~["K-256", "P-256"].indexOf(this.keyCurve.namedCurve)) return "";
+    if (this?.keyCurve?.namedCurve && !~["K-256", "P-256"].indexOf(this.keyCurve.namedCurve)) return "";
+    //@ts-ignore
     x509.cryptoProvider.set(liner.crypto);
 
     let { digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment } = x509.KeyUsageFlags;
@@ -264,43 +268,17 @@ class keyconverter {
     return (await cert).toString(encoding);
   }
 
-  public async import(privateKey: Buffer | JsonWebKey | string | CryptoKey, encoding?: FormatOptions): Promise<void> {
+  public async import(privateKey: Buffer | JsonWebKey | string | CryptoKey, encoding?: FormatOptions): Promise<CryptoKey> {
 
-    this.privateKey = undefined;
+    this.privateKey = new CryptoKey;
 
-    if (privateKey?.crv === "secp256k1") {
-      privateKey.crv = "K-256";
+    if ((privateKey as JsonWebKey)?.crv === "secp256k1") {
+      (privateKey as JsonWebKey).crv = "K-256";
     }
 
     if (encoding === "ipfs:protobuf") {
       try {
-
-        /*
-        /// Legacy Direct Approach
-       
-         const ipfsKey = await protobufjs.parse(`
-         syntax = "proto2";
- 
-         enum KeyType {
-           RSA = 0;
-           Ed25519 = 1;
-           Secp256k1 = 2;
-           ECDSA = 3;
-         }
- 
-         message PublicKey {
-           required KeyType Type = 1;
-           required bytes Data = 2;
-         }
- 
-         message PrivateKey {
-           required KeyType Type = 1;
-           required bytes Data = 2;
-         }`).root;
-         privateKey = (ipfsKey.lookupType("PrivateKey").decode(privateKey as any)).Data;
-         */
-
-        privateKey = (await lp2pcrypto.keys.unmarshalPrivateKey(privateKey))._key;
+        privateKey = ((await lp2pcrypto.keys.unmarshalPrivateKey(privateKey as Buffer)) as any)._key;
         encoding = "raw:private";
       } catch (e) {
         console.log(e)
@@ -308,17 +286,17 @@ class keyconverter {
     }
 
     if (privateKey instanceof CryptoKey) {
-      this.privateKey = privateKey;
+      this.privateKey = privateKey as CryptoKey;
     } else {
       if (~["raw", "raw:private", undefined].indexOf(encoding)) {
         privateKey = keyconverter.toHex(privateKey);
       } else {
         if (typeof privateKey === "string") {
-          if (encoding.match(/pkcs/) || privateKey.match(/\-{5}BEGIN.*PRIVATE KEY/g)) {
+          if (encoding?.match(/pkcs/) || privateKey?.match(/\-{5}BEGIN.*PRIVATE KEY/g) && this.privateKey.algorithm?.name) {
             let pp = x509.PemConverter.decode(privateKey);
             this.privateKey = await subtle.importKey("pkcs8", pp[0], this.keyCurve, this.extractable, this.keyUsages);
             const exportedPrivateKey: JsonWebKey = await subtle.exportKey("jwk", this.privateKey);
-            privateKey = base64URL.decode(exportedPrivateKey.d, "hex");
+            privateKey = base64URL.decode(exportedPrivateKey.d as string, "hex");
           } else if (encoding === "bip39") {
             privateKey = bip39.mnemonicToEntropy(privateKey);
           } else if (encoding === "wif") {
@@ -335,18 +313,23 @@ class keyconverter {
         }
       }
       if (encoding === "hex") {
-        privateKey = privateKey.replace(/^0x/, "");
+        privateKey = (privateKey as string).replace(/^0x/, "");
       }
-      if (!this.privateKey) {
-        let jwk = keyconverter.jwkConversion(privateKey, this.keyCurve, "hex");
+      if (!this.privateKey.algorithm?.name) {
+        let jwk = keyconverter.jwkConversion(privateKey as string, this.keyCurve as EcKeyGenParams, "hex");
         this.privateKey = await subtle.importKey("jwk", jwk, this.keyCurve, this.extractable, this.keyUsages);
       }
 
-      let importJWK = await subtle.exportKey("jwk", this.privateKey);
-      if (!importJWK.x) {
+      let importJWK;
+      if (this.privateKey.algorithm?.name) {
+        importJWK = await subtle.exportKey("jwk", this.privateKey);
+      } else {
+        throw Error("No Private Key Loaded");
+      }
+      if (!importJWK.x && this.privateKey.algorithm?.name) {
         const exportedPrivateKey: JsonWebKey = await subtle.exportKey("jwk", this.privateKey);
-        privateKey = base64URL.toBuffer(exportedPrivateKey.d);
-        let jwk = keyconverter.jwkConversion(privateKey.toString("hex"), this.keyCurve, "hex");
+        privateKey = base64URL.toBuffer(exportedPrivateKey.d as string);
+        let jwk = keyconverter.jwkConversion(privateKey.toString("hex"), this.keyCurve as EcKeyGenParams, "hex");
         delete jwk.d;
         importJWK = jwk;
       }
@@ -361,6 +344,8 @@ class keyconverter {
   }
 
   constructor(namedCurve: EcKeyGenParams, algorithm: AlgorithmIdentifier = EcAlgorithm, extractable: boolean = true, keyUsages?: Array<KeyUsageOptions>) {
+    this.privateKey = new CryptoKey();
+    this.publicKey = new CryptoKey();
     this.keyCurve = namedCurve;
     this.extractable = extractable;
     this.algorithm = algorithm;
@@ -369,7 +354,7 @@ class keyconverter {
 }
 
 const pubKeyToEthAddress = async (pubPoint: string): Promise<string> => {
-  if (pubPoint.slice(0, 2) !== "04" || pubPoint.length < 130) return undefined;
+  if (pubPoint.slice(0, 2) !== "04" || pubPoint.length < 130) return "";
   let keccakHex = createKeccakHash("keccak256")
     .update(Buffer.from(pubPoint.slice(2), "hex"))
     .digest("hex");
