@@ -14,7 +14,7 @@ import elliptic from "elliptic";
 import { generateKeyPair } from "curve25519-js";
 import PeerId from "peer-id";
 import protobufjs from "protobufjs";
-import crypto from "libp2p-crypto";
+import lp2pcrypto from "libp2p-crypto";
 
 import CID from 'cids';
 import multihash from "multihashes";
@@ -130,15 +130,16 @@ class keyconverter {
         if (this.keyCurve.namedCurve != "K-256") return Buffer.from("");
         let pP = [Buffer.from(await this.publicKeyHex(), "hex"), Buffer.from(await this.privateKeyHex(), "hex")];
         let key = type === "public" ? pP[0] : pP[1];
-        let keyToExport = new crypto.keys.supportedKeys.secp256k1[type === "public" ? "Secp256k1PublicKey" : "Secp256k1PrivateKey"](key, pP[0]);
-        return crypto.keys[`marshal${type === "public" ? "Public" : "Private"}Key`](keyToExport as any, "secp256k1");
+        let keyToExport = new lp2pcrypto.keys.supportedKeys.secp256k1[type === "public" ? "Secp256k1PublicKey" : "Secp256k1PrivateKey"](key, pP[0]);
+        let exportedKey = lp2pcrypto.keys[`marshal${type === "public" ? "Public" : "Private"}Key`](keyToExport as any, "secp256k1");
+        return exportedKey;
       } else if (encoding === "hex") {
         return _hex;
       } else if (encoding === "bip39") {
         if (type === "public") {
           keyconverter.exportFormatError(encoding, type);
         } else {
-          return bip39.entropyToMnemonic(Buffer.from(_hex, "hex"));
+          return bip39.entropyToMnemonic(Buffer.from(_hex, "hex").toString());
         }
       } else if (encoding === "wif") {
         if (type === "public") {
@@ -197,15 +198,15 @@ class keyconverter {
     const crypto = require("libp2p-crypto");
     const PeerId = require("peer-id");
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-    let convertedKey = new crypto.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(Buffer.from(await this.privateKeyHex(), "hex"));
-    let pID: PeerId = await PeerId.createFromPrivKey(crypto.keys.marshalPrivateKey(convertedKey), "secp256k1");
+    let convertedKey = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(Buffer.from(await this.privateKeyHex(), "hex"));
+    let pID: PeerId = await PeerId.createFromPrivKey(lp2pcrypto.keys.marshalPrivateKey(convertedKey), "secp256k1");
     return pID;
   }
 
   async ipnsCID(): Promise<String> {
     if (this.keyCurve.namedCurve !== "K-256") return "";
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-    let key = new crypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from(await this.publicKeyHex(), "hex"));
+    let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from(await this.publicKeyHex(), "hex"));
     let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
     return cID;
   }
@@ -273,26 +274,33 @@ class keyconverter {
 
     if (encoding === "ipfs:protobuf") {
       try {
-        const ipfsKey = await protobufjs.parse(`
-        syntax = "proto2";
 
-        enum KeyType {
-          RSA = 0;
-          Ed25519 = 1;
-          Secp256k1 = 2;
-          ECDSA = 3;
-        }
+        /*
+        /// Legacy Direct Approach
+       
+         const ipfsKey = await protobufjs.parse(`
+         syntax = "proto2";
+ 
+         enum KeyType {
+           RSA = 0;
+           Ed25519 = 1;
+           Secp256k1 = 2;
+           ECDSA = 3;
+         }
+ 
+         message PublicKey {
+           required KeyType Type = 1;
+           required bytes Data = 2;
+         }
+ 
+         message PrivateKey {
+           required KeyType Type = 1;
+           required bytes Data = 2;
+         }`).root;
+         privateKey = (ipfsKey.lookupType("PrivateKey").decode(privateKey as any)).Data;
+         */
 
-        message PublicKey {
-          required KeyType Type = 1;
-          required bytes Data = 2;
-        }
-
-        message PrivateKey {
-          required KeyType Type = 1;
-          required bytes Data = 2;
-        }`).root;
-        privateKey = (ipfsKey.lookupType("PrivateKey").decode(privateKey) as any).Data;
+        privateKey = (await lp2pcrypto.keys.unmarshalPrivateKey(privateKey))._key;
         encoding = "raw:private";
       } catch (e) {
         console.log(e)

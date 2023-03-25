@@ -121157,7 +121157,7 @@ var ethereumChecksumAddress = {
   checkAddressChecksum
 };
 
-//@ts-nocheck
+//Copyright 2023 DigitalArsenal.io, Inc.
 const { EcAlgorithm } = x509$1;
 const { CryptoKey } = liner;
 const { crypto: linerCrypto } = liner;
@@ -121223,7 +121223,8 @@ class keyconverter {
                 let pP = [Buffer$8.from(await this.publicKeyHex(), "hex"), Buffer$8.from(await this.privateKeyHex(), "hex")];
                 let key = type === "public" ? pP[0] : pP[1];
                 let keyToExport = new src$7.keys.supportedKeys.secp256k1[type === "public" ? "Secp256k1PublicKey" : "Secp256k1PrivateKey"](key, pP[0]);
-                return src$7.keys[`marshal${type === "public" ? "Public" : "Private"}Key`](keyToExport, "secp256k1");
+                let exportedKey = src$7.keys[`marshal${type === "public" ? "Public" : "Private"}Key`](keyToExport, "secp256k1");
+                return exportedKey;
             }
             else if (encoding === "hex") {
                 return _hex;
@@ -121233,7 +121234,7 @@ class keyconverter {
                     keyconverter.exportFormatError(encoding, type);
                 }
                 else {
-                    return entropyToMnemonic_1(Buffer$8.from(_hex, "hex"));
+                    return entropyToMnemonic_1(Buffer$8.from(_hex, "hex").toString());
                 }
             }
             else if (encoding === "wif") {
@@ -121294,11 +121295,11 @@ class keyconverter {
         }
     }
     async ipfsPeerID() {
-        const crypto = require("libp2p-crypto");
+        require("libp2p-crypto");
         const PeerId = require("peer-id");
         //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-        let convertedKey = new crypto.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(Buffer$8.from(await this.privateKeyHex(), "hex"));
-        let pID = await PeerId.createFromPrivKey(crypto.keys.marshalPrivateKey(convertedKey), "secp256k1");
+        let convertedKey = new src$7.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(Buffer$8.from(await this.privateKeyHex(), "hex"));
+        let pID = await PeerId.createFromPrivKey(src$7.keys.marshalPrivateKey(convertedKey), "secp256k1");
         return pID;
     }
     async ipnsCID() {

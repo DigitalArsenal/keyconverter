@@ -1,6 +1,6 @@
 {
   "name": "keyconverter",
-  "version": "1.0.9",
+  "version": "1.2.0",
   "description": "Convert private keys to a variety of formats for use in PKI applications",
   "main": "src/keyconverter.ts",
   "repository": {
@@ -17,7 +17,9 @@
     "x509",
     "certificates",
     "certificate",
-    "authority"
+    "authority",
+    "decentralization",
+    "trust"
   ],
   "author": "digitalarsenal.io, inc.",
   "license": "MIT",
