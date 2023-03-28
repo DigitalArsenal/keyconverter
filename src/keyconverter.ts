@@ -69,6 +69,7 @@ type ExtendedCryptoKey = {
 
 class keyconverter {
   privateKey: CryptoKey;
+  privateKeyLength: number;
   publicKey: CryptoKey;
   keyCurve: EcKeyGenParams;
   extractable: boolean;
@@ -115,6 +116,10 @@ class keyconverter {
     return Buffer.from(buffer, "hex").toString("hex");
   }
 
+  private static trimHex(h: string, len: number): string {
+    return h.slice(-(len / 4));
+  }
+
   private static exportFormatError(encoding: string, type: KeyType): void {
     throw Error(`${encoding} format is not available for KeyType ${type}`);
   }
@@ -124,7 +129,7 @@ class keyconverter {
     if (this.privateKey === undefined) {
       throw Error("No Private Key");
     } else {
-      const _hex = type === "private" ? await this.privateKeyHex() : await this.publicKeyHex();
+      const _hex = type === "private" ? keyconverter.trimHex((await this.privateKeyHex()), this.privateKeyLength) : await this.publicKeyHex();
       if (encoding === "ipfs:protobuf") {
         if (this?.keyCurve?.namedCurve != "K-256") return Buffer.from("");
         let pP = [Buffer.from(await this.publicKeyHex(), "hex"), Buffer.from(await this.privateKeyHex(), "hex")];
@@ -138,7 +143,7 @@ class keyconverter {
         if (type === "public") {
           keyconverter.exportFormatError(encoding, type);
         } else {
-          return bip39.entropyToMnemonic(Buffer.from(_hex, "hex").toString());
+          return bip39.entropyToMnemonic(_hex);
         }
       } else if (encoding === "wif") {
         if (type === "public") {
@@ -290,6 +295,7 @@ class keyconverter {
     } else {
       if (~["raw", "raw:private", undefined].indexOf(encoding)) {
         privateKey = keyconverter.toHex(privateKey);
+        encoding = "hex";
       } else {
         if (typeof privateKey === "string") {
           if (encoding?.match(/pkcs/) || privateKey?.match(/\-{5}BEGIN.*PRIVATE KEY/g) && this.privateKey.algorithm?.name) {
@@ -297,8 +303,10 @@ class keyconverter {
             this.privateKey = await subtle.importKey("pkcs8", pp[0], this.keyCurve, this.extractable, this.keyUsages);
             const exportedPrivateKey: JsonWebKey = await subtle.exportKey("jwk", this.privateKey);
             privateKey = base64URL.decode(exportedPrivateKey.d as string, "hex");
+            encoding = "hex";
           } else if (encoding === "bip39") {
             privateKey = bip39.mnemonicToEntropy(privateKey);
+            encoding = "hex";
           } else if (encoding === "wif") {
             const decodedWif = wif.decode(privateKey);
             privateKey = keyconverter.toHex(decodedWif.privateKey);
@@ -313,8 +321,11 @@ class keyconverter {
         }
       }
       if (encoding === "hex") {
-        privateKey = (privateKey as string).replace(/^0x/, "");
+        privateKey = keyconverter.trimHex((privateKey as string), this.privateKeyLength);
+      } else {
+        throw Error(`Unknown Private Key Format, ${encoding}, ${privateKey}`);
       }
+
       if (!this.privateKey.algorithm?.name) {
         let jwk = keyconverter.jwkConversion(privateKey as string, this.keyCurve as EcKeyGenParams, "hex");
         this.privateKey = await subtle.importKey("jwk", jwk, this.keyCurve, this.extractable, this.keyUsages);
@@ -343,8 +354,9 @@ class keyconverter {
     return this.publicKey;
   }
 
-  constructor(namedCurve: EcKeyGenParams, algorithm: AlgorithmIdentifier = EcAlgorithm, extractable: boolean = true, keyUsages?: Array<KeyUsageOptions>) {
+  constructor(namedCurve: EcKeyGenParams, privateKeyLength: number = 128, algorithm: AlgorithmIdentifier = EcAlgorithm, extractable: boolean = true, keyUsages?: Array<KeyUsageOptions>) {
     this.privateKey = new CryptoKey();
+    this.privateKeyLength = privateKeyLength;
     this.publicKey = new CryptoKey();
     this.keyCurve = namedCurve;
     this.extractable = extractable;
