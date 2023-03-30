@@ -88,7 +88,7 @@ const runAssertions = async (type: FormatOptions, km: keyconverter, cindex: stri
   if (km.keyCurve.namedCurve === "K-256") {
     let protoBufKey = await readFile("./test_content/secp256k1.protobuf.key");
     console.log(km.keyCurve)
-    let kmx = new keyconverter(km.keyCurve);
+    let kmx = new keyconverter(km.keyCurve, 256);
     await kmx.import(protoBufKey, "ipfs:protobuf");
   }
 
@@ -116,13 +116,15 @@ const runAssertions = async (type: FormatOptions, km: keyconverter, cindex: stri
     //execSync(`openssl ec -in ${keyPath} -text -noout > test.txt`);
     //execSync(`openssl x509 -in ${certPath} -noout -text`);
   }
-  // console.log(await km.export("ssh", "private"));
-  // console.log(await km.export("ssh", "public", `exported-from: ${type}`));
+  if (~["P-256", "Ed25519"].indexOf(km.keyCurve.namedCurve)) {
+    expect((await km.export("ssh", "private") as string).length).to.be.greaterThan(0);
+    expect((await km.export("ssh", "public", `exported-from: ${type}`) as string).length).to.be.greaterThan(0);
+  }
 };
 (async function () {
   for (let c in curves) {
     let curve = curves[c];
-    let km = new keyconverter(curve);
+    let km = new keyconverter(curve, 256);
     let harness = JSON.parse(readFileSync(`./test_content/check/${c}.json`, "utf-8"));
 
     it(`Imports Private Key as raw: ${c}`, async function () {

@@ -154,16 +154,25 @@ class keyconverter {
       } else if (~["ssh", "pkcs8"].indexOf(encoding)) {
         let _type = type === "public" ? "public" : "private";
         let _keyType = `${_type} key`;
-        let exportedKey = await subtle.exportKey("pkcs8", _type === "public" ? this.publicKey : this.privateKey, _keyType);
-        let pkcs8 = x509.PemConverter.encode(exportedKey, _keyType);
-        if (encoding === "pkcs8" && type !== "public") {
-          return pkcs8;
-        } else if (namedCurve && ~["secp256r1", "ed25519"].indexOf(namedCurve)) {
-          let sshkey = sshpk.parsePrivateKey(pkcs8, "pkcs8");
+        let exportedPrivateKey = await subtle.exportKey("pkcs8", this.privateKey, _keyType);
+
+        if (encoding === "pkcs8") {
+          if (type === "private") {
+            return x509.PemConverter.encode(exportedPrivateKey, _keyType);
+          } else {
+            let exportedPublicKey = await subtle.exportKey("pkcs8", this.publicKey, _keyType);
+            return x509.PemConverter.encode(exportedPublicKey, _keyType);
+          }
+        } else if (encoding === "ssh" && namedCurve && ~["p-256", "secp256r1", "ed25519"].indexOf(namedCurve)) {
+          let sshkey = sshpk.parsePrivateKey(x509.PemConverter.encode(exportedPrivateKey, "private key"), "pkcs8");
           sshkey.comment = comment;
-          return sshkey.toPublic().toString("ssh");
+          if (type === "private") {
+            return sshkey.toString("openssh");
+          } else if (type === "public") {
+            return sshkey.toPublic().toString("ssh");
+          }
         } else {
-          throw Error(`Cannot export ${namedCurve} as SSH Public Key.`);
+          throw Error(`Cannot export ${namedCurve} as SSH Key.`);
         }
       } else if (encoding === "jwk") {
         let publicKey = await subtle.exportKey(encoding, this.publicKey);
@@ -222,7 +231,7 @@ class keyconverter {
     subject = `CN = localhost`,
     issuer = `BTC`,
     notBefore = new Date("2020/01/01"),
-    notAfter = new Date("2022/01/02"),
+    notAfter = new Date("3020/01/02"),
     signingAlgorithm = {
       name: "No Value"
     },
@@ -322,7 +331,7 @@ class keyconverter {
       }
       if (encoding === "hex") {
         privateKey = keyconverter.trimHex((privateKey as string), this.privateKeyLength);
-      } else {
+      } else if (encoding !== "jwk") {
         throw Error(`Unknown Private Key Format, ${encoding}, ${privateKey}`);
       }
 
