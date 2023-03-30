@@ -28,6 +28,8 @@ const { crypto: linerCrypto } = liner;
 
 let { subtle } = linerCrypto;
 
+const formatPub = (publicKeyHex: string) => publicKeyHex = publicKeyHex.replace(/^0x/, "");
+
 /**
 
  * @type
@@ -120,6 +122,7 @@ class keyconverter {
     return h.slice(-(len / 4));
   }
 
+
   private static exportFormatError(encoding: string, type: KeyType): void {
     throw Error(`${encoding} format is not available for KeyType ${type}`);
   }
@@ -209,19 +212,22 @@ class keyconverter {
   }
 
   async ipfsPeerID(): Promise<PeerId> {
-    const crypto = require("libp2p-crypto");
-    const PeerId = require("peer-id");
+    if (!this.privateKey) {
+      return null;
+    }
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-    //@ts-ignore
-    let convertedKey = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(Buffer.from(await this.privateKeyHex(), "hex"));
-    let pID: PeerId = await PeerId.createFromPrivKey(lp2pcrypto.keys.marshalPrivateKey(convertedKey), "secp256k1");
+    let convertedKey = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(Buffer.from(await this.privateKeyHex(), "hex"), null);
+    let pID: PeerId = await PeerId.createFromPrivKey(lp2pcrypto.keys.marshalPrivateKey(convertedKey));
     return pID;
   }
 
-  async ipnsCID(): Promise<String> {
+  async ipnsCID(publicKeyHex?: string): Promise<String> {
+    if (publicKeyHex) {
+      publicKeyHex = formatPub(publicKeyHex);
+    }
     if (this?.keyCurve?.namedCurve !== "K-256") return "";
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-    let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from(await this.publicKeyHex(), "hex"));
+    let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from((publicKeyHex || await this.publicKeyHex()), "hex"));
     let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
     return cID;
   }
@@ -374,10 +380,11 @@ class keyconverter {
   }
 }
 
-const pubKeyToEthAddress = async (pubPoint: string): Promise<string> => {
-  if (pubPoint.slice(0, 2) !== "04" || pubPoint.length < 130) return "";
+const pubKeyToEthAddress = async (publicKeyHex: string): Promise<string> => {
+  publicKeyHex = formatPub(publicKeyHex);
+  if (publicKeyHex.slice(0, 2) !== "04" || publicKeyHex.length < 130) return "";
   let keccakHex = createKeccakHash("keccak256")
-    .update(Buffer.from(pubPoint.slice(2), "hex"))
+    .update(Buffer.from(publicKeyHex.slice(2), "hex"))
     .digest("hex");
   return toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
 }
