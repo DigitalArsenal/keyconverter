@@ -1,6 +1,6 @@
 {
   "name": "keyconverter",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Convert private keys to a variety of formats for use in PKI applications",
   "main": "src/keyconverter.ts",
   "repository": {

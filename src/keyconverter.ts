@@ -221,13 +221,10 @@ class keyconverter {
     return pID;
   }
 
-  async ipnsCID(publicKeyHex?: string): Promise<String> {
-    if (publicKeyHex) {
-      publicKeyHex = formatPub(publicKeyHex);
-    }
+  async ipnsCID(): Promise<String> {
     if (this?.keyCurve?.namedCurve !== "K-256") return "";
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-    let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from((publicKeyHex || await this.publicKeyHex()), "hex"));
+    let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from((await this.publicKeyHex()), "hex"));
     let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
     return cID;
   }
