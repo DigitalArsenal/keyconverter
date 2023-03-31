@@ -115633,16 +115633,10 @@ class keyconverter {
         let pID = await PeerId.createFromPrivKey(src$5.keys.marshalPrivateKey(convertedKey));
         return pID;
     }
-    async ipnsCID(publicKeyHex) {
-        if (publicKeyHex) {
-            publicKeyHex = formatPub(publicKeyHex);
-        }
+    async ipnsCID() {
         if (this?.keyCurve?.namedCurve !== "K-256")
             return "";
-        //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-        let key = new src$5.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer$8.from((publicKeyHex || await this.publicKeyHex()), "hex"));
-        let cID = new src(1, "libp2p-key", src$2.encode(key.bytes, "identity")).toString('base36');
-        return cID;
+        return await pubKeyToIPFSCID(await this.publicKeyHex());
     }
     async exportX509Certificate({ serialNumber = `${Date.now()} `, subject = `CN = localhost`, issuer = `BTC`, notBefore = new Date("2020/01/01"), notAfter = new Date("3020/01/02"), signingAlgorithm = {
         name: "No Value"
@@ -115765,5 +115759,10 @@ const pubKeyToEthAddress = async (publicKeyHex) => {
         .digest("hex");
     return ethereumChecksumAddress.toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
 };
+const pubKeyToIPFSCID = async (publicKeyHex) => {
+    let key = new src$5.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer$8.from((publicKeyHex), "hex"));
+    let cID = new src(1, "libp2p-key", src$2.encode(key.bytes, "identity")).toString('base36');
+    return cID;
+};
 
-export { keyconverter, pubKeyToEthAddress };
+export { keyconverter, pubKeyToEthAddress, pubKeyToIPFSCID };

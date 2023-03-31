@@ -223,10 +223,7 @@ class keyconverter {
 
   async ipnsCID(): Promise<String> {
     if (this?.keyCurve?.namedCurve !== "K-256") return "";
-    //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-    let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from((await this.publicKeyHex()), "hex"));
-    let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
-    return cID;
+    return await pubKeyToIPFSCID(await this.publicKeyHex());
   }
 
   public async exportX509Certificate({
@@ -386,4 +383,9 @@ const pubKeyToEthAddress = async (publicKeyHex: string): Promise<string> => {
   return toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
 }
 
-export { keyconverter, pubKeyToEthAddress };
+const pubKeyToIPFSCID = async (publicKeyHex: string): Promise<string> => {
+  let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from((publicKeyHex), "hex"));
+  let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
+  return cID;
+}
+export { keyconverter, pubKeyToEthAddress, pubKeyToIPFSCID };
