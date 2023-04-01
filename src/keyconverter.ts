@@ -28,7 +28,7 @@ const { crypto: linerCrypto } = liner;
 
 let { subtle } = linerCrypto;
 
-const formatPub = (publicKeyHex: string) => publicKeyHex = publicKeyHex.replace(/^0x/, "");
+const formatPub = (publicKeyHex: string) => publicKeyHex.replace(/^0x/, "");
 
 /**
 

@@ -115474,7 +115474,7 @@ const { CryptoKey } = liner;
 //@ts-ignore
 const { crypto: linerCrypto } = liner;
 let { subtle } = linerCrypto;
-const formatPub = (publicKeyHex) => publicKeyHex = publicKeyHex.replace(/^0x/, "");
+const formatPub = (publicKeyHex) => publicKeyHex.replace(/^0x/, "");
 class keyconverter {
     constructor(namedCurve, privateKeyLength = 128, algorithm = EcAlgorithm, extractable = true, keyUsages) {
         this.privateKey = new CryptoKey();

@@ -1,4 +1,4 @@
-import { keyconverter, pubKeyToEthAddress, FormatOptions } from "../src/keyconverter";
+import { keyconverter, pubKeyToEthAddress, pubKeyToIPFSCID, FormatOptions } from "../src/keyconverter";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { readFile } from "fs/promises";
 import { exec, execSync } from "child_process";
