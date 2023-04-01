@@ -384,6 +384,7 @@ const pubKeyToEthAddress = async (publicKeyHex: string): Promise<string> => {
 }
 
 const pubKeyToIPFSCID = async (publicKeyHex: string): Promise<string> => {
+  publicKeyHex = formatPub(publicKeyHex);
   let key = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer.from((publicKeyHex), "hex"));
   let cID: string = new CID(1, "libp2p-key", multihash.encode(key.bytes, "identity")).toString('base36');
   return cID;

@@ -115760,6 +115760,7 @@ const pubKeyToEthAddress = async (publicKeyHex) => {
     return ethereumChecksumAddress.toChecksumAddress(`${keccakHex.substring(keccakHex.length - 40, keccakHex.length).toUpperCase()}`);
 };
 const pubKeyToIPFSCID = async (publicKeyHex) => {
+    publicKeyHex = formatPub(publicKeyHex);
     let key = new src$5.keys.supportedKeys.secp256k1.Secp256k1PublicKey(Buffer$8.from((publicKeyHex), "hex"));
     let cID = new src(1, "libp2p-key", src$2.encode(key.bytes, "identity")).toString('base36');
     return cID;
