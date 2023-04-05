@@ -213,10 +213,12 @@ class keyconverter {
 
   async ipfsPeerID(): Promise<PeerId> {
     if (!this.privateKey) {
-      return null;
+      throw Error("No Private Key")
     }
     //This is hard-coded to secp256k1 for BTC and ETH, even though Ed25519 keys are available
-    let convertedKey = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(Buffer.from(await this.privateKeyHex(), "hex"), null);
+    let convertedKey = new lp2pcrypto.keys.supportedKeys.secp256k1.Secp256k1PrivateKey(
+      Buffer.from(await this.privateKeyHex(), "hex"),
+      Buffer.from(await this.publicKeyHex(), "hex"));
     let pID: PeerId = await PeerId.createFromPrivKey(lp2pcrypto.keys.marshalPrivateKey(convertedKey));
     return pID;
   }
